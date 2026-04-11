@@ -34,23 +34,28 @@
       border-radius: 16px; padding: 20px; margin-bottom: 20px;
     }
 
-    /* Token Toggle */
+    /* Token Toggle — 2x2 grid */
     .token-toggle {
-      display: flex; gap: 0; margin-bottom: 20px; border-radius: 12px; overflow: hidden;
-      border: 1px solid rgba(99,102,241,0.2);
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 20px;
+      border-radius: 12px; overflow: hidden; border: 1px solid rgba(99,102,241,0.2);
     }
     .token-btn {
-      flex: 1; padding: 12px 8px; text-align: center; cursor: pointer;
+      padding: 10px 6px; text-align: center; cursor: pointer;
       background: rgba(15,23,42,0.4); color: #64748b;
-      font-size: 13px; font-weight: 600; border: none;
+      font-size: 12px; font-weight: 600; border: none;
       transition: all 0.2s ease; position: relative;
+      border-bottom: 1px solid rgba(99,102,241,0.1);
+      border-right: 1px solid rgba(99,102,241,0.1);
     }
-    .token-btn:first-child { border-right: 1px solid rgba(99,102,241,0.2); }
+    .token-btn:nth-child(2n) { border-right: none; }
+    .token-btn:nth-child(n+3) { border-bottom: none; }
     .token-btn.active {
       background: rgba(99,102,241,0.15); color: #818cf8;
     }
     .token-btn .token-sub { font-size: 10px; color: #475569; display: block; margin-top: 2px; font-weight: 400; }
     .token-btn.active .token-sub { color: #6366f1; }
+    .token-btn .token-days { font-size: 9px; color: #374151; display: block; margin-top: 1px; font-weight: 400; }
+    .token-btn.active .token-days { color: #818cf8; }
 
     /* Live badge */
     .live-row {
@@ -185,15 +190,27 @@
       <p class="subtitle">Calcola il tuo potenziale rendimento. Muovi gli slider per esplorare gli scenari.</p>
     </div>
 
-    <!-- Token Toggle -->
-    <div class="token-toggle">
-      <button class="token-btn active" onclick="selectToken('usdai')">
+    <!-- Market Toggle — 4 markets -->
+    <div class="token-toggle" id="market-buttons">
+      <button class="token-btn active" data-market="usdai-oct" onclick="selectMarket('usdai-oct')">
         YT USDai
         <span class="token-sub">Solo punti, no yield</span>
+        <span class="token-days" id="btn-days-usdai-oct">Oct 2026 · 186d</span>
       </button>
-      <button class="token-btn" onclick="selectToken('susdai')">
+      <button class="token-btn" data-market="susdai-oct" onclick="selectMarket('susdai-oct')">
         YT sUSDai
         <span class="token-sub">Punti + Yield Recovery</span>
+        <span class="token-days" id="btn-days-susdai-oct">Oct 2026 · 186d</span>
+      </button>
+      <button class="token-btn" data-market="usdai-jun" onclick="selectMarket('usdai-jun')">
+        YT USDai
+        <span class="token-sub">Solo punti, no yield</span>
+        <span class="token-days" id="btn-days-usdai-jun">Jun 2026 · 67d</span>
+      </button>
+      <button class="token-btn" data-market="susdai-jun" onclick="selectMarket('susdai-jun')">
+        YT sUSDai
+        <span class="token-sub">Punti + Yield Recovery</span>
+        <span class="token-days" id="btn-days-susdai-jun">Jun 2026 · 67d</span>
       </button>
     </div>
 
@@ -387,14 +404,18 @@
 
   <script>
     // ── State ──
-    let selectedToken = "usdai"; // "usdai" or "susdai"
+    let selectedMarket = "usdai-oct"; // "usdai-oct", "usdai-jun", "susdai-oct", "susdai-jun"
     let liveData = null;
     let isFetching = false;
 
-    // Token-specific settings
-    const TOKEN_CONFIG = {
-      usdai: { pointsPerDay: 25, hasYield: false, defaultYieldPct: 0 },
-      susdai: { pointsPerDay: 12, hasYield: true, defaultYieldPct: 85 }
+    // Market-specific settings
+    // USDai: 25 pts/day, underlying APY = 0% (no yield recovery)
+    // sUSDai: 12 pts/day, underlying APY ~6.5% (has yield recovery)
+    const MARKET_CONFIG = {
+      "usdai-oct":  { token: "usdai",  pointsPerDay: 25, hasYield: false, defaultYieldPct: 0, label: "Oct 2026" },
+      "usdai-jun":  { token: "usdai",  pointsPerDay: 25, hasYield: false, defaultYieldPct: 0, label: "Jun 2026" },
+      "susdai-oct": { token: "susdai", pointsPerDay: 12, hasYield: true,  defaultYieldPct: 85, label: "Oct 2026" },
+      "susdai-jun": { token: "susdai", pointsPerDay: 12, hasYield: true,  defaultYieldPct: 85, label: "Jun 2026" },
     };
 
     // Season constants
@@ -458,20 +479,13 @@
       return "#eab308";
     }
 
-    // Extract just the address from Pendle's "chainId-0xAddress" format
-    function extractAddress(raw) {
-      if (!raw || typeof raw !== "string") return null;
-      const parts = raw.split("-");
-      return parts.length > 1 ? parts.slice(1).join("-") : raw;
-    }
+    // ── Market Toggle ──
+    function selectMarket(marketId) {
+      selectedMarket = marketId;
+      const cfg = MARKET_CONFIG[marketId];
 
-    // ── Token Toggle ──
-    function selectToken(token) {
-      selectedToken = token;
-      const cfg = TOKEN_CONFIG[token];
-
-      document.querySelectorAll(".token-btn").forEach((btn, i) => {
-        btn.classList.toggle("active", (i === 0 && token === "usdai") || (i === 1 && token === "susdai"));
+      document.querySelectorAll(".token-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.market === marketId);
       });
 
       const yieldSection = document.getElementById("yield-section");
@@ -484,14 +498,16 @@
         document.getElementById("yieldRecoveryPct").value = cfg.defaultYieldPct;
       }
 
-      // Auto-set points per day for this token
+      // Auto-set points per day for this market
       document.getElementById("pointsPerDay").value = cfg.pointsPerDay;
 
       // If we have cached live data, apply it; otherwise auto-fetch
-      if (liveData && liveData[token] && liveData[token].daysLeft > 0) {
-        applyLiveData(liveData[token]);
-      } else {
+      if (liveData && liveData[marketId] && liveData[marketId].daysLeft > 0) {
+        applyLiveData(liveData[marketId]);
+      } else if (!liveData) {
         fetchLiveData();
+      } else {
+        update();
       }
     }
 
@@ -510,148 +526,114 @@
       statusText.textContent = "Connessione a Pendle...";
 
       try {
-        if (!liveData) liveData = {};
+        liveData = {};
 
-        // ── Step 1: Fetch v1/active to get market list + details ──
-        console.log("[Pendle] Fetching v1 active markets...");
+        // Fetch v1/active — returns all active markets with details
         const res = await fetchWithCors(`${API_BASE}/v1/${CHAIN_ID}/markets/active`);
         const data = await res.json();
         const markets = Array.isArray(data) ? data : (data.results || data.markets || []);
-        console.log("[Pendle] Active markets count:", markets.length);
+        console.log("[Pendle] Active markets:", markets.length);
 
         const now = Date.now();
-        const ytAddresses = {}; // store YT addresses to fetch prices later
+        // Collect all USD.ai markets, grouped by token type
+        const usdaiMarkets = [];
+        const susdaiMarkets = [];
 
         for (const m of markets) {
           const name = (m.name || "").toLowerCase();
           const expiry = m.expiry ? new Date(m.expiry).getTime() : 0;
           if (expiry && expiry < now) continue;
 
-          // Match by name
-          let matchToken = null;
-          if (name.includes("susdai") || name.includes("s-usdai") || name.includes("staked usdai")) {
-            matchToken = "susdai";
+          if (name.includes("susdai") || name.includes("s-usdai")) {
+            susdaiMarkets.push(m);
           } else if (name.includes("usdai") || name.includes("usd.ai")) {
-            matchToken = "usdai";
+            usdaiMarkets.push(m);
           }
+        }
 
-          if (!matchToken) continue;
+        console.log("[Pendle] USDai markets:", usdaiMarkets.length, "| sUSDai markets:", susdaiMarkets.length);
 
-          console.log("[Pendle] Matched " + matchToken + ":", name, "| address:", m.address);
-          console.log("[Pendle] Market details:", JSON.stringify(m.details || {}).substring(0, 500));
+        // Sort each group by expiry (closest first)
+        const sortByExpiry = (a, b) => new Date(a.expiry) - new Date(b.expiry);
+        usdaiMarkets.sort(sortByExpiry);
+        susdaiMarkets.sort(sortByExpiry);
 
-          // Parse data from v1/active response structure:
-          // { name, address, expiry, pt: "chainId-0x...", yt: "chainId-0x...", details: { liquidity, impliedApy, aggregatedApy, ... } }
+        // Map to our 4 market IDs: jun = closest expiry, oct = furthest expiry
+        const mapMarkets = (sorted, tokenType) => {
+          if (sorted.length >= 2) {
+            return { jun: sorted[0], oct: sorted[sorted.length - 1] };
+          } else if (sorted.length === 1) {
+            return { oct: sorted[0] }; // only one, assign to oct
+          }
+          return {};
+        };
+
+        const usdaiMap = mapMarkets(usdaiMarkets, "usdai");
+        const susdaiMap = mapMarkets(susdaiMarkets, "susdai");
+
+        // Parse each market
+        const parseAndStore = (m, marketId) => {
+          if (!m) return;
           const details = m.details || {};
-
-          const tvl = details.liquidity || 0;
-          const impliedApy = details.impliedApy || 0;
-          const aggregatedApy = details.aggregatedApy || 0;
-          const pendleApy = details.pendleApy || 0;
-          const maxBoostedApy = details.maxBoostedApy || 0;
+          const cfg = MARKET_CONFIG[marketId];
+          const isUsdai = cfg.token === "usdai";
 
           let daysLeft = 0;
           if (m.expiry) {
             daysLeft = Math.max(0, Math.round((new Date(m.expiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
           }
 
-          // Store YT address for price lookup
-          const ytAddr = extractAddress(m.yt);
-          if (ytAddr) ytAddresses[matchToken] = ytAddr;
+          const impliedApy = details.impliedApy || 0;
+          const tvl = details.liquidity || 0;
+          // USDai underlying APY is always 0 (no real yield), sUSDai uses aggregatedApy
+          const underlyingApy = isUsdai ? 0 : (details.aggregatedApy || 0);
 
-          liveData[matchToken] = {
-            ytPrice: 0, // will be filled by price endpoint
-            ptPrice: 0,
+          // Calculate YT price from implied APY:
+          // YT price = impliedApy × (days/365) / (1 + impliedApy × (days/365))
+          // This is the standard Pendle YT pricing formula for ~$1 underlyings
+          const timeToExpiry = daysLeft / 365;
+          const ytPrice = impliedApy > 0 && daysLeft > 0
+            ? (impliedApy * timeToExpiry) / (1 + impliedApy * timeToExpiry)
+            : 0;
+
+          const expiryDate = m.expiry ? new Date(m.expiry) : null;
+          const expiryLabel = expiryDate
+            ? expiryDate.toLocaleDateString("en", { month: "short", year: "numeric" })
+            : "";
+
+          liveData[marketId] = {
+            ytPrice,
             tvl,
             daysLeft,
-            underlyingApy: aggregatedApy,
+            underlyingApy,
             impliedApy,
-            pendleApy,
-            maxBoostedApy,
+            fixedApy: impliedApy, // In Pendle: implied APY = PT fixed APY
             marketAddress: m.address,
-            ytAddress: ytAddr,
+            expiryLabel,
+            name: m.name || "",
           };
-        }
 
-        // ── Step 2: Fetch YT prices from assets endpoint ──
-        for (const [token, ytAddr] of Object.entries(ytAddresses)) {
-          if (!ytAddr) continue;
-          try {
-            // Try: /v1/{chainId}/assets/all — might return prices for all assets
-            // Or: individual asset lookup
-            const priceUrl = `${API_BASE}/v1/${CHAIN_ID}/assets/all`;
-            console.log("[Pendle] Fetching all assets for " + token + " YT price (addr: " + ytAddr + ")...");
+          console.log("[Pendle] " + marketId + ":", JSON.stringify(liveData[marketId]));
 
-            // We cache the assets response to avoid fetching twice
-            if (!window._pendleAssetsCache) {
-              const pRes = await fetchWithCors(priceUrl);
-              window._pendleAssetsCache = await pRes.json();
-              console.log("[Pendle] Assets response type:", typeof window._pendleAssetsCache,
-                Array.isArray(window._pendleAssetsCache) ? "array[" + window._pendleAssetsCache.length + "]" : "");
-              if (Array.isArray(window._pendleAssetsCache) && window._pendleAssetsCache.length > 0) {
-                console.log("[Pendle] First asset keys:", Object.keys(window._pendleAssetsCache[0]));
-                console.log("[Pendle] First asset sample:", JSON.stringify(window._pendleAssetsCache[0]).substring(0, 500));
-              }
-            }
-
-            const assets = window._pendleAssetsCache;
-            if (Array.isArray(assets)) {
-              // Find YT asset by address
-              for (const a of assets) {
-                const aAddr = extractAddress(a.address || a.id || "") || "";
-                if (aAddr.toLowerCase() === ytAddr.toLowerCase()) {
-                  console.log("[Pendle] Found YT asset for " + token + ":", JSON.stringify(a).substring(0, 500));
-                  const price = a.price || a.priceUsd || a.priceInUsd || a.currentPrice || 0;
-                  if (price > 0 && liveData[token]) {
-                    liveData[token].ytPrice = Number(price);
-                    console.log("[Pendle] YT price for " + token + ": $" + price);
-                  }
-                  break;
-                }
-              }
-            }
-          } catch (e) {
-            console.warn("[Pendle] Failed to fetch YT price for " + token + ":", e.message);
+          // Update button label with real days
+          const btnDaysEl = document.getElementById("btn-days-" + marketId);
+          if (btnDaysEl) {
+            btnDaysEl.textContent = expiryLabel + " · " + daysLeft + "d";
           }
-        }
+        };
 
-        // ── Step 3: If assets endpoint didn't give prices, try market-specific v2 endpoint with REAL address ──
-        for (const [token, info] of Object.entries(liveData)) {
-          if (info.ytPrice > 0) continue; // Already have price
-          if (!info.marketAddress) continue;
+        parseAndStore(usdaiMap.jun, "usdai-jun");
+        parseAndStore(usdaiMap.oct, "usdai-oct");
+        parseAndStore(susdaiMap.jun, "susdai-jun");
+        parseAndStore(susdaiMap.oct, "susdai-oct");
 
-          try {
-            const detailUrl = `${API_BASE}/v2/${CHAIN_ID}/markets/${info.marketAddress}`;
-            console.log("[Pendle] Trying v2 market detail for " + token + " at:", info.marketAddress);
-            const dRes = await fetchWithCors(detailUrl);
-            const dData = await dRes.json();
-            console.log("[Pendle] v2 detail keys:", Object.keys(dData));
-            console.log("[Pendle] v2 detail:", JSON.stringify(dData).substring(0, 1000));
-
-            // Try to find YT price in the detailed response
-            const ytP = dData.ytPrice || dData.yt?.price || dData.yt?.priceUsd || 0;
-            if (ytP > 0) {
-              info.ytPrice = Number(ytP);
-              console.log("[Pendle] Got YT price from v2 detail for " + token + ": $" + ytP);
-            }
-          } catch (e) {
-            console.warn("[Pendle] v2 detail failed for " + token + ":", e.message);
-          }
-        }
-
-        // ── Step 4: Apply data for currently selected token ──
-        const current = liveData[selectedToken];
-        if (current && (current.ytPrice > 0 || current.tvl > 0)) {
+        // Apply data for currently selected market
+        const current = liveData[selectedMarket];
+        if (current && current.daysLeft > 0) {
           applyLiveData(current);
-          if (current.ytPrice > 0) {
-            status.className = "live-badge";
-            statusText.textContent = "Live da Pendle";
-            document.getElementById("manual-fallback").classList.remove("show");
-          } else {
-            status.className = "live-badge stale";
-            statusText.textContent = "Dati parziali (inserisci prezzo YT)";
-            document.getElementById("manual-fallback").classList.add("show");
-          }
+          status.className = "live-badge";
+          statusText.textContent = "Live da Pendle";
+          document.getElementById("manual-fallback").classList.remove("show");
         } else {
           status.className = "live-badge error";
           statusText.textContent = "Mercato non trovato";
@@ -700,7 +682,12 @@
       }
 
       const apyEl = document.getElementById("live-apy");
-      if (data.underlyingApy > 0) {
+      const cfg = MARKET_CONFIG[selectedMarket];
+      if (!cfg.hasYield) {
+        // USDai: underlying APY is always 0%
+        apyEl.textContent = "0%";
+        apyEl.classList.remove("loading");
+      } else if (data.underlyingApy > 0) {
         apyEl.textContent = (data.underlyingApy * 100).toFixed(1) + "%";
         apyEl.classList.remove("loading");
       } else {
@@ -738,11 +725,11 @@
       }
 
       // Set points/day based on selected token
-      const cfg = TOKEN_CONFIG[selectedToken];
+      const cfg = MARKET_CONFIG[selectedMarket];
       document.getElementById("pointsPerDay").value = cfg.pointsPerDay;
 
       // For sUSDai: calculate yield recovery from underlying APY
-      if (selectedToken === "susdai" && data.underlyingApy > 0 && data.daysLeft > 0) {
+      if (MARKET_CONFIG[selectedMarket].hasYield && data.underlyingApy > 0 && data.daysLeft > 0) {
         const yieldFraction = data.underlyingApy * (data.daysLeft / 365);
         const recoveryPct = Math.min(100, Math.round(yieldFraction * 100));
         document.getElementById("yieldRecoveryPct").value = recoveryPct;
@@ -759,7 +746,7 @@
       const days = +document.getElementById("daysLeft").value;
       const tpB = +document.getElementById("totalPointsB").value;
       const apM = +document.getElementById("airdropPoolM").value;
-      const yrP = selectedToken === "susdai" ? +document.getElementById("yieldRecoveryPct").value : 0;
+      const yrP = MARKET_CONFIG[selectedMarket].hasYield ? +document.getElementById("yieldRecoveryPct").value : 0;
 
       // Slider labels
       document.getElementById("inv-val").textContent = "$" + inv.toLocaleString();
@@ -789,9 +776,9 @@
       document.getElementById("stat-airdrop").textContent = formatUSD(airdropValue);
       document.getElementById("stat-yield").textContent = formatUSD(yieldRecovered);
 
-      // Show/hide yield card based on token
+      // Show/hide yield card based on market
       const yieldCard = document.getElementById("yield-card");
-      if (selectedToken === "usdai") {
+      if (!MARKET_CONFIG[selectedMarket].hasYield) {
         yieldCard.style.display = "none";
       } else {
         yieldCard.style.display = "";
@@ -834,7 +821,7 @@
       });
       document.getElementById("scenarios-container").innerHTML = html;
 
-      const yieldNote = selectedToken === "susdai" ? " (yield recovery " + yrP + "%)" : " (USDai: no yield recovery)";
+      const yieldNote = MARKET_CONFIG[selectedMarket].hasYield ? " (yield recovery " + yrP + "%)" : " (USDai: no yield recovery)";
       document.getElementById("scenario-note").textContent = "Yield recovery applicato a tutti gli scenari" + yieldNote;
     }
 
@@ -865,7 +852,7 @@
     }
 
     // Init — set default points and auto-fetch
-    document.getElementById("pointsPerDay").value = TOKEN_CONFIG[selectedToken].pointsPerDay;
+    document.getElementById("pointsPerDay").value = MARKET_CONFIG[selectedMarket].pointsPerDay;
     update();
     // Auto-fetch on page load
     fetchLiveData();
