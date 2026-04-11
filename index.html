@@ -452,8 +452,11 @@
       align-items: center;
       gap: 6px;
       align-self: center;
-      width: fit-content;
-      padding: 5px 10px;
+      flex: 0 0 auto;
+      width: auto;
+      max-width: max-content;
+      white-space: nowrap;
+      padding: 5px 9px;
       border-radius: 999px;
       font-size: 11px;
       font-weight: 700;
@@ -486,10 +489,13 @@
       pointer-events: none;
     }
     .cta-kicker {
-      display: inline-block;
+      display: inline-flex;
       align-self: flex-start;
-      width: fit-content;
-      padding: 4px 9px;
+      flex: 0 0 auto;
+      width: auto;
+      max-width: max-content;
+      white-space: nowrap;
+      padding: 4px 8px;
       border-radius: 999px;
       background: rgba(34,197,94,0.12);
       border: 1px solid rgba(34,197,94,0.25);
