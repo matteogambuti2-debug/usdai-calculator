@@ -724,12 +724,11 @@
         document.getElementById("daysLeft").value = Math.min(200, data.daysLeft);
       }
 
-      // Set points/day based on selected token
-      const cfg = MARKET_CONFIG[selectedMarket];
+      // Set points/day based on selected market
       document.getElementById("pointsPerDay").value = cfg.pointsPerDay;
 
       // For sUSDai: calculate yield recovery from underlying APY
-      if (MARKET_CONFIG[selectedMarket].hasYield && data.underlyingApy > 0 && data.daysLeft > 0) {
+      if (cfg.hasYield && data.underlyingApy > 0 && data.daysLeft > 0) {
         const yieldFraction = data.underlyingApy * (data.daysLeft / 365);
         const recoveryPct = Math.min(100, Math.round(yieldFraction * 100));
         document.getElementById("yieldRecoveryPct").value = recoveryPct;
