@@ -406,12 +406,6 @@
     const CHAIN_ID = 42161;
     const API_BASE = "https://api-v2.pendle.finance/core";
 
-    // Known market addresses on Arbitrum
-    const KNOWN_MARKETS = {
-      usdai: "0xa8a0dea40174cfc30fea9e3a77f182ab33f46e25",
-      susdai: "0x2092fa5d02276b3136a50f3c2c3a6ed45413183e"
-    };
-
     // CORS proxies (GitHub Pages should work direct, but fallback just in case)
     const CORS_PROXIES = [
       { name: "direct", fn: (url) => url },
@@ -464,22 +458,11 @@
       return "#eab308";
     }
 
-    // Deep field finder — searches nested object for a value by trying multiple paths
-    function findField(obj, ...paths) {
-      for (const path of paths) {
-        const parts = path.split(".");
-        let val = obj;
-        for (const p of parts) {
-          if (val == null) break;
-          val = val[p];
-        }
-        if (val != null && val !== 0 && val !== "") return val;
-      }
-      return null;
-    }
-    function findNumericField(obj, ...paths) {
-      const v = findField(obj, ...paths);
-      return v != null ? Number(v) : 0;
+    // Extract just the address from Pendle's "chainId-0xAddress" format
+    function extractAddress(raw) {
+      if (!raw || typeof raw !== "string") return null;
+      const parts = raw.split("-");
+      return parts.length > 1 ? parts.slice(1).join("-") : raw;
     }
 
     // ── Token Toggle ──
@@ -505,7 +488,7 @@
       document.getElementById("pointsPerDay").value = cfg.pointsPerDay;
 
       // If we have cached live data, apply it; otherwise auto-fetch
-      if (liveData && liveData[token]) {
+      if (liveData && liveData[token] && liveData[token].daysLeft > 0) {
         applyLiveData(liveData[token]);
       } else {
         fetchLiveData();
@@ -527,85 +510,151 @@
       statusText.textContent = "Connessione a Pendle...";
 
       try {
-        // Strategy: fetch BOTH known market addresses directly (more reliable than searching)
         if (!liveData) liveData = {};
 
-        for (const [token, addr] of Object.entries(KNOWN_MARKETS)) {
-          if (liveData[token] && liveData[token].ytPrice > 0) continue; // Already fetched
+        // ── Step 1: Fetch v1/active to get market list + details ──
+        console.log("[Pendle] Fetching v1 active markets...");
+        const res = await fetchWithCors(`${API_BASE}/v1/${CHAIN_ID}/markets/active`);
+        const data = await res.json();
+        const markets = Array.isArray(data) ? data : (data.results || data.markets || []);
+        console.log("[Pendle] Active markets count:", markets.length);
 
+        const now = Date.now();
+        const ytAddresses = {}; // store YT addresses to fetch prices later
+
+        for (const m of markets) {
+          const name = (m.name || "").toLowerCase();
+          const expiry = m.expiry ? new Date(m.expiry).getTime() : 0;
+          if (expiry && expiry < now) continue;
+
+          // Match by name
+          let matchToken = null;
+          if (name.includes("susdai") || name.includes("s-usdai") || name.includes("staked usdai")) {
+            matchToken = "susdai";
+          } else if (name.includes("usdai") || name.includes("usd.ai")) {
+            matchToken = "usdai";
+          }
+
+          if (!matchToken) continue;
+
+          console.log("[Pendle] Matched " + matchToken + ":", name, "| address:", m.address);
+          console.log("[Pendle] Market details:", JSON.stringify(m.details || {}).substring(0, 500));
+
+          // Parse data from v1/active response structure:
+          // { name, address, expiry, pt: "chainId-0x...", yt: "chainId-0x...", details: { liquidity, impliedApy, aggregatedApy, ... } }
+          const details = m.details || {};
+
+          const tvl = details.liquidity || 0;
+          const impliedApy = details.impliedApy || 0;
+          const aggregatedApy = details.aggregatedApy || 0;
+          const pendleApy = details.pendleApy || 0;
+          const maxBoostedApy = details.maxBoostedApy || 0;
+
+          let daysLeft = 0;
+          if (m.expiry) {
+            daysLeft = Math.max(0, Math.round((new Date(m.expiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+          }
+
+          // Store YT address for price lookup
+          const ytAddr = extractAddress(m.yt);
+          if (ytAddr) ytAddresses[matchToken] = ytAddr;
+
+          liveData[matchToken] = {
+            ytPrice: 0, // will be filled by price endpoint
+            ptPrice: 0,
+            tvl,
+            daysLeft,
+            underlyingApy: aggregatedApy,
+            impliedApy,
+            pendleApy,
+            maxBoostedApy,
+            marketAddress: m.address,
+            ytAddress: ytAddr,
+          };
+        }
+
+        // ── Step 2: Fetch YT prices from assets endpoint ──
+        for (const [token, ytAddr] of Object.entries(ytAddresses)) {
+          if (!ytAddr) continue;
           try {
-            // Try v2 endpoint first (single market, most detailed)
-            const url = `${API_BASE}/v2/${CHAIN_ID}/markets/${addr}`;
-            console.log("[Pendle] Fetching " + token + ": " + url);
-            const res = await fetchWithCors(url);
-            const raw = await res.json();
+            // Try: /v1/{chainId}/assets/all — might return prices for all assets
+            // Or: individual asset lookup
+            const priceUrl = `${API_BASE}/v1/${CHAIN_ID}/assets/all`;
+            console.log("[Pendle] Fetching all assets for " + token + " YT price (addr: " + ytAddr + ")...");
 
-            // Log FULL response for debugging
-            console.log("[Pendle] RAW " + token + " response:", JSON.stringify(raw).substring(0, 2000));
-            console.log("[Pendle] RAW " + token + " keys:", Object.keys(raw));
-            if (raw.yt) console.log("[Pendle] yt object:", JSON.stringify(raw.yt));
-            if (raw.pt) console.log("[Pendle] pt object:", JSON.stringify(raw.pt));
+            // We cache the assets response to avoid fetching twice
+            if (!window._pendleAssetsCache) {
+              const pRes = await fetchWithCors(priceUrl);
+              window._pendleAssetsCache = await pRes.json();
+              console.log("[Pendle] Assets response type:", typeof window._pendleAssetsCache,
+                Array.isArray(window._pendleAssetsCache) ? "array[" + window._pendleAssetsCache.length + "]" : "");
+              if (Array.isArray(window._pendleAssetsCache) && window._pendleAssetsCache.length > 0) {
+                console.log("[Pendle] First asset keys:", Object.keys(window._pendleAssetsCache[0]));
+                console.log("[Pendle] First asset sample:", JSON.stringify(window._pendleAssetsCache[0]).substring(0, 500));
+              }
+            }
 
-            liveData[token] = parseMarketData(raw, token);
-            console.log("[Pendle] Parsed " + token + ":", JSON.stringify(liveData[token]));
+            const assets = window._pendleAssetsCache;
+            if (Array.isArray(assets)) {
+              // Find YT asset by address
+              for (const a of assets) {
+                const aAddr = extractAddress(a.address || a.id || "") || "";
+                if (aAddr.toLowerCase() === ytAddr.toLowerCase()) {
+                  console.log("[Pendle] Found YT asset for " + token + ":", JSON.stringify(a).substring(0, 500));
+                  const price = a.price || a.priceUsd || a.priceInUsd || a.currentPrice || 0;
+                  if (price > 0 && liveData[token]) {
+                    liveData[token].ytPrice = Number(price);
+                    console.log("[Pendle] YT price for " + token + ": $" + price);
+                  }
+                  break;
+                }
+              }
+            }
           } catch (e) {
-            console.warn("[Pendle] Failed to fetch " + token + " via v2:", e.message);
+            console.warn("[Pendle] Failed to fetch YT price for " + token + ":", e.message);
           }
         }
 
-        // If v2 failed for both, try v1 active markets as fallback
-        if ((!liveData.usdai || !liveData.usdai.ytPrice) && (!liveData.susdai || !liveData.susdai.ytPrice)) {
-          console.log("[Pendle] Trying v1 active markets fallback...");
+        // ── Step 3: If assets endpoint didn't give prices, try market-specific v2 endpoint with REAL address ──
+        for (const [token, info] of Object.entries(liveData)) {
+          if (info.ytPrice > 0) continue; // Already have price
+          if (!info.marketAddress) continue;
+
           try {
-            const res = await fetchWithCors(`${API_BASE}/v1/${CHAIN_ID}/markets/active`);
-            const data = await res.json();
-            const markets = Array.isArray(data) ? data : (data.results || data.markets || []);
-            console.log("[Pendle] v1 active markets count:", markets.length);
-            if (markets.length > 0) {
-              console.log("[Pendle] First market sample keys:", Object.keys(markets[0]));
-              console.log("[Pendle] First market sample:", JSON.stringify(markets[0]).substring(0, 1000));
-            }
+            const detailUrl = `${API_BASE}/v2/${CHAIN_ID}/markets/${info.marketAddress}`;
+            console.log("[Pendle] Trying v2 market detail for " + token + " at:", info.marketAddress);
+            const dRes = await fetchWithCors(detailUrl);
+            const dData = await dRes.json();
+            console.log("[Pendle] v2 detail keys:", Object.keys(dData));
+            console.log("[Pendle] v2 detail:", JSON.stringify(dData).substring(0, 1000));
 
-            const now = Date.now();
-            for (const m of markets) {
-              const name = (m.name || m.symbol || m.proName || "").toLowerCase();
-              const addr = (m.address || m.marketAddress || "").toLowerCase();
-              const expiry = m.expiry ? new Date(m.expiry).getTime() : (m.expiryTimestamp ? m.expiryTimestamp * 1000 : 0);
-              if (expiry && expiry < now) continue;
-
-              let matchToken = null;
-              if (addr === KNOWN_MARKETS.susdai || name.includes("susdai") || name.includes("s-usdai")) {
-                matchToken = "susdai";
-              } else if (addr === KNOWN_MARKETS.usdai || name.includes("usdai")) {
-                matchToken = "usdai";
-              }
-
-              if (matchToken && (!liveData[matchToken] || !liveData[matchToken].ytPrice)) {
-                console.log("[Pendle] Found " + matchToken + " in active markets:", name);
-                liveData[matchToken] = parseMarketData(m, matchToken);
-              }
+            // Try to find YT price in the detailed response
+            const ytP = dData.ytPrice || dData.yt?.price || dData.yt?.priceUsd || 0;
+            if (ytP > 0) {
+              info.ytPrice = Number(ytP);
+              console.log("[Pendle] Got YT price from v2 detail for " + token + ": $" + ytP);
             }
           } catch (e) {
-            console.warn("[Pendle] v1 active markets failed:", e.message);
+            console.warn("[Pendle] v2 detail failed for " + token + ":", e.message);
           }
         }
 
-        // Apply data for currently selected token
+        // ── Step 4: Apply data for currently selected token ──
         const current = liveData[selectedToken];
-        if (current && current.ytPrice > 0) {
+        if (current && (current.ytPrice > 0 || current.tvl > 0)) {
           applyLiveData(current);
-          status.className = "live-badge";
-          statusText.textContent = "Live da Pendle";
-          document.getElementById("manual-fallback").classList.remove("show");
-        } else if (current && current.daysLeft > 0) {
-          // Partial data — some fields worked
-          applyLiveData(current);
-          status.className = "live-badge stale";
-          statusText.textContent = "Dati parziali";
-          document.getElementById("manual-fallback").classList.add("show");
+          if (current.ytPrice > 0) {
+            status.className = "live-badge";
+            statusText.textContent = "Live da Pendle";
+            document.getElementById("manual-fallback").classList.remove("show");
+          } else {
+            status.className = "live-badge stale";
+            statusText.textContent = "Dati parziali (inserisci prezzo YT)";
+            document.getElementById("manual-fallback").classList.add("show");
+          }
         } else {
           status.className = "live-badge error";
-          statusText.textContent = "Dati non disponibili";
+          statusText.textContent = "Mercato non trovato";
           document.getElementById("manual-fallback").classList.add("show");
         }
 
@@ -619,82 +668,6 @@
       btn.disabled = false;
       btn.textContent = "Aggiorna dati";
       isFetching = false;
-    }
-
-    function parseMarketData(m, tokenType) {
-      // Try MANY field name patterns — Pendle API format varies between v1/v2 and over time
-      // YT Price
-      const ytPrice = findNumericField(m,
-        "yt.price", "yt.priceUsd", "yt.priceInUsd",
-        "ytPrice", "ytPriceUsd", "ytPriceInUsd",
-        "ytSide.price", "ytSide.priceUsd"
-      );
-
-      // PT Price
-      const ptPrice = findNumericField(m,
-        "pt.price", "pt.priceUsd", "pt.priceInUsd",
-        "ptPrice", "ptPriceUsd", "ptPriceInUsd",
-        "ptSide.price", "ptSide.priceUsd"
-      );
-
-      // TVL / Liquidity
-      const tvl = findNumericField(m,
-        "liquidity.usd", "liquidity.totalUsd",
-        "liquidityUsd", "totalLiquidity", "totalValueLocked",
-        "tvl", "totalTvl", "tvlUsd",
-        "liquidityInUsd", "totalLiquidityUsd"
-      );
-
-      // Expiry
-      const expiryRaw = findField(m,
-        "expiry", "expiryTimestamp", "maturity", "maturityTimestamp"
-      );
-
-      // APYs (Pendle returns these as decimals: 0.05 = 5%)
-      let underlyingApy = findNumericField(m,
-        "underlyingApy", "underlyingInterestApy",
-        "aggregatedApy", "underlyingYieldRate",
-        "underlyingAssetApy", "baseApy"
-      );
-
-      let impliedApy = findNumericField(m,
-        "impliedApy", "ytImpliedApy", "impliedYield",
-        "ytApy", "marketImpliedApy"
-      );
-
-      // Pendle PT discount (useful for sUSDai: shows how much you save)
-      const ptDiscount = findNumericField(m,
-        "ptDiscount", "discount", "ptDiscountPercentage"
-      );
-
-      // LP APY (for sUSDai liquidity info)
-      const lpApy = findNumericField(m,
-        "lpApy", "swapFeeApr", "swapFeeApy",
-        "lpRewardApy", "totalLpApy"
-      );
-
-      // Calculate days left
-      let daysLeft = 0;
-      if (expiryRaw) {
-        let expiryMs;
-        if (typeof expiryRaw === "number") {
-          expiryMs = expiryRaw < 1e12 ? expiryRaw * 1000 : expiryRaw;
-        } else {
-          expiryMs = new Date(expiryRaw).getTime();
-        }
-        daysLeft = Math.max(0, Math.round((expiryMs - Date.now()) / (1000 * 60 * 60 * 24)));
-      }
-
-      // If APYs look like they're already in percentage form (>1), convert
-      if (underlyingApy > 1) underlyingApy = underlyingApy / 100;
-      if (impliedApy > 1) impliedApy = impliedApy / 100;
-
-      return {
-        ytPrice, ptPrice, tvl, daysLeft,
-        underlyingApy, impliedApy,
-        ptDiscount, lpApy,
-        raw: m // keep raw for debugging
-      };
     }
 
     function applyLiveData(data) {
@@ -749,7 +722,7 @@
       const now = new Date();
       const daysElapsed = Math.max(1, (now - SEASON_START) / (1000 * 60 * 60 * 24));
       const daysRemaining = Math.max(0, (SEASON_END - now) / (1000 * 60 * 60 * 24));
-      const currentDailyRate = 171e9 / Math.min(daysElapsed, 51); // calibrate to known ~171B in ~51 days
+      const currentDailyRate = 171e9 / Math.min(daysElapsed, 51);
       const projectedTotal = 171e9 + (currentDailyRate * daysRemaining);
       const estPointsB = Math.round(projectedTotal / 1e9);
       estEl.textContent = estPointsB + "B";
