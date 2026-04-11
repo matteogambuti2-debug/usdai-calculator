@@ -14,7 +14,14 @@
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       padding: 24px 16px;
     }
-    .container { max-width: 520px; margin: 0 auto; }
+    .container { max-width: 1180px; margin: 0 auto; }
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+      gap: 20px;
+      align-items: start;
+    }
+    .dashboard-column { min-width: 0; }
 
     .badge {
       display: inline-block; padding: 4px 12px;
@@ -113,6 +120,13 @@
     }
     .quick-pick:hover { background: rgba(99,102,241,0.16); }
     .amount-note { font-size: 11px; color: #64748b; margin-top: 10px; line-height: 1.45; }
+    .controls-note { font-size: 11px; color: #94a3b8; line-height: 1.45; margin-bottom: 16px; }
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 16px;
+    }
+    .controls-grid .slider-group { margin-bottom: 0; }
 
     /* Sliders */
     .slider-group { margin-bottom: 20px; }
@@ -192,6 +206,16 @@
     }
     .cta-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(99,102,241,0.4); }
     .cta-sub { text-align: center; font-size: 11px; color: #475569; margin-bottom: 24px; }
+
+    @media (max-width: 960px) {
+      .container { max-width: 560px; }
+      .dashboard-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 640px) {
+      .controls-grid { grid-template-columns: 1fr; }
+      .live-data-grid { grid-template-columns: 1fr 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -202,6 +226,9 @@
       <h1>USD.ai Airdrop Simulator</h1>
       <p class="subtitle">Calcola il tuo potenziale rendimento. Muovi gli slider per esplorare gli scenari.</p>
     </div>
+
+    <div class="dashboard-grid">
+      <div class="dashboard-column">
 
     <!-- Market Toggle — 4 markets -->
     <div class="token-toggle" id="market-buttons">
@@ -312,24 +339,72 @@
     </div>
 
     <div class="card">
-      <div class="scenario-title">Ipotesi airdrop</div>
-      <div class="slider-group">
-        <div class="slider-header">
-          <span class="slider-label">Punti totali season (stima)</span>
-          <span class="slider-value" id="tp-val">700B</span>
-        </div>
-        <input type="range" id="totalPointsB" min="200" max="2000" step="10" value="700" oninput="update()">
-        <div class="slider-bounds"><span>200B</span><span>2000B</span></div>
+      <div class="scenario-title">Controlli & Preset</div>
+      <div class="controls-note">
+        I bottoni sopra caricano un preset live di Pendle. Dopo il click puoi comunque cambiare prezzo, giorni, APY e punti per costruire qualsiasi scenario.
       </div>
-      <div class="slider-group" style="margin-bottom:0">
-        <div class="slider-header">
-          <span class="slider-label">Airdrop Pool</span>
-          <span class="slider-value" id="ap-val">$15M</span>
+      <div class="controls-grid">
+        <div class="slider-group">
+          <div class="slider-header">
+            <span class="slider-label">Prezzo YT</span>
+            <span class="slider-value" id="ytp-val">$0.0100</span>
+          </div>
+          <input type="range" id="ytPrice" min="0.001" max="0.1200" step="0.0005" value="0.0100" oninput="update()">
+          <div class="slider-bounds"><span>$0.0010</span><span>$0.1200</span></div>
         </div>
-        <input type="range" id="airdropPoolM" min="1" max="50" step="1" value="15" oninput="update()">
-        <div class="slider-bounds"><span>$1M</span><span>$50M</span></div>
+        <div class="slider-group">
+          <div class="slider-header">
+            <span class="slider-label">Giorni rimanenti</span>
+            <span class="slider-value" id="days-val">67</span>
+          </div>
+          <input type="range" id="daysLeft" min="1" max="250" step="1" value="67" oninput="update()">
+          <div class="slider-bounds"><span>1</span><span>250</span></div>
+        </div>
+        <div class="slider-group">
+          <div class="slider-header">
+            <span class="slider-label">Underlying APY</span>
+            <span class="slider-value" id="uapy-val">6.58%</span>
+          </div>
+          <input type="range" id="underlyingApyPct" min="0" max="20" step="0.05" value="6.58" oninput="update()">
+          <div class="slider-bounds"><span>0%</span><span>20%</span></div>
+        </div>
+        <div class="slider-group">
+          <div class="slider-header">
+            <span class="slider-label">Implied Yield</span>
+            <span class="slider-value" id="iapy-val">8.10%</span>
+          </div>
+          <input type="range" id="impliedApyPct" min="0" max="25" step="0.05" value="8.10" oninput="update()">
+          <div class="slider-bounds"><span>0%</span><span>25%</span></div>
+        </div>
+        <div class="slider-group">
+          <div class="slider-header">
+            <span class="slider-label">Punti / YT / Giorno</span>
+            <span class="slider-value" id="ppd-val">12</span>
+          </div>
+          <input type="range" id="pointsPerDay" min="1" max="30" step="1" value="12" oninput="update()">
+          <div class="slider-bounds"><span>1</span><span>30</span></div>
+        </div>
+        <div class="slider-group">
+          <div class="slider-header">
+            <span class="slider-label">Punti totali season</span>
+            <span class="slider-value" id="tp-val">700B</span>
+          </div>
+          <input type="range" id="totalPointsB" min="200" max="2000" step="10" value="700" oninput="update()">
+          <div class="slider-bounds"><span>200B</span><span>2000B</span></div>
+        </div>
+        <div class="slider-group">
+          <div class="slider-header">
+            <span class="slider-label">Airdrop Pool</span>
+            <span class="slider-value" id="ap-val">$15M</span>
+          </div>
+          <input type="range" id="airdropPoolM" min="1" max="50" step="1" value="15" oninput="update()">
+          <div class="slider-bounds"><span>$1M</span><span>$50M</span></div>
+        </div>
       </div>
     </div>
+
+      </div>
+      <div class="dashboard-column">
 
     <!-- Stats Grid -->
     <div class="stats-grid">
@@ -346,8 +421,8 @@
         <div class="stat-value" id="stat-total">59.56M</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Notional Controllato</div>
-        <div class="stat-value" id="stat-notional">$0</div>
+        <div class="stat-label">Punti / $1M</div>
+        <div class="stat-value" id="stat-per-million">0</div>
       </div>
       <div class="stat-card large">
         <div class="stat-label">Yield Lordo Stimato</div>
@@ -361,7 +436,7 @@
 
     <!-- P&L Box -->
     <div class="pnl-box neutral" id="pnl-box">
-      <div class="pnl-label">Pendle-Style Earn Vs Implied</div>
+      <div class="pnl-label">PNL Finale Stimato</div>
       <div class="pnl-value" id="pnl-value">--</div>
       <div class="pnl-sub" id="pnl-sub">ROI: +27.6% · Costo netto: $1000</div>
     </div>
@@ -384,6 +459,8 @@
       Prova USD.ai &rarr;
     </a>
     <div class="cta-sub">10% referral bonus per chi si registra da qui</div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -397,10 +474,10 @@
     // USDai: 25 pts/day, underlying APY = 0% (no yield recovery)
     // sUSDai: 12 pts/day, underlying APY ~6.5% (has yield recovery)
     const MARKET_CONFIG = {
-      "usdai-oct":  { token: "usdai",  pointsPerDay: 25, hasYield: false, fallbackLabel: "USDai Oct" },
-      "usdai-jun":  { token: "usdai",  pointsPerDay: 25, hasYield: false, fallbackLabel: "USDai Jun" },
-      "susdai-oct": { token: "susdai", pointsPerDay: 12, hasYield: true,  fallbackLabel: "sUSDai Oct" },
-      "susdai-jun": { token: "susdai", pointsPerDay: 12, hasYield: true,  fallbackLabel: "sUSDai Jun" },
+      "usdai-oct":  { token: "usdai",  pointsPerDay: 25, hasYield: false, fallbackLabel: "USDai Oct", defaultUnderlyingApy: 0 },
+      "usdai-jun":  { token: "usdai",  pointsPerDay: 25, hasYield: false, fallbackLabel: "USDai Jun", defaultUnderlyingApy: 0 },
+      "susdai-oct": { token: "susdai", pointsPerDay: 12, hasYield: true,  fallbackLabel: "sUSDai Oct", defaultUnderlyingApy: 0.0658 },
+      "susdai-jun": { token: "susdai", pointsPerDay: 12, hasYield: true,  fallbackLabel: "sUSDai Jun", defaultUnderlyingApy: 0.0658 },
     };
 
     // Season constants
@@ -913,14 +990,14 @@
     function getSelectedMarketData() {
       const cfg = MARKET_CONFIG[selectedMarket];
       return liveData[selectedMarket] || manualData[selectedMarket] || {
-        ytPrice: 0,
-        daysLeft: 0,
-        underlyingApy: cfg.hasYield ? 0 : 0,
-        impliedApy: 0,
-        earnPct: null,
+        ytPrice: 0.01,
+        daysLeft: 67,
+        underlyingApy: cfg.defaultUnderlyingApy || 0,
+        impliedApy: cfg.hasYield ? 0.081 : 0.055,
+        earnPct: calculateEarnPct(cfg.defaultUnderlyingApy || 0, cfg.hasYield ? 0.081 : 0.055, cfg.hasYield),
         pointsPerDay: cfg.pointsPerDay,
-        expiryLabel: cfg.fallbackLabel || cfg.label || selectedMarket,
-        name: cfg.fallbackLabel || cfg.label || selectedMarket,
+        expiryLabel: cfg.fallbackLabel || selectedMarket,
+        name: cfg.fallbackLabel || selectedMarket,
       };
     }
 
@@ -931,28 +1008,67 @@
       el.classList.toggle("loading", !ready);
     }
 
+    function setSliderValue(id, value, decimals) {
+      const el = document.getElementById(id);
+      if (!el || !Number.isFinite(value)) return;
+      const min = toNumber(el.min, value);
+      const max = toNumber(el.max, value);
+      const bounded = Math.min(max, Math.max(min, value));
+      el.value = decimals != null ? bounded.toFixed(decimals) : bounded;
+    }
+
+    function getCurrentAssumptions() {
+      const cfg = MARKET_CONFIG[selectedMarket];
+      const ytPrice = toNumber(document.getElementById("ytPrice").value, 0);
+      const daysLeft = toNumber(document.getElementById("daysLeft").value, 0);
+      const underlyingApy = cfg.hasYield ? toNumber(document.getElementById("underlyingApyPct").value, 0) / 100 : 0;
+      const impliedApy = toNumber(document.getElementById("impliedApyPct").value, 0) / 100;
+      const pointsPerDay = toNumber(document.getElementById("pointsPerDay").value, cfg.pointsPerDay);
+      return {
+        ytPrice,
+        daysLeft,
+        underlyingApy,
+        impliedApy,
+        pointsPerDay,
+        earnPct: calculateEarnPct(underlyingApy, impliedApy, cfg.hasYield),
+      };
+    }
+
     function renderLiveCards(data) {
       const cfg = MARKET_CONFIG[selectedMarket];
-      const hasPrice = data.ytPrice > 0;
-      const hasDays = data.daysLeft > 0;
-      const hasImplied = data.impliedApy > 0;
-      const hasUnderlying = cfg.hasYield ? data.underlyingApy > 0 : true;
+      const assumptions = getCurrentAssumptions();
+      const display = data || assumptions;
 
-      setCardValue("live-yt-price", hasPrice ? "$" + data.ytPrice.toFixed(4) : "--", hasPrice);
-      setCardValue("live-days", hasDays ? String(data.daysLeft) : "--", hasDays);
-      setCardValue("live-apy", cfg.hasYield ? (hasUnderlying ? formatApy(data.underlyingApy) : "--") : "0.00%", true);
-      setCardValue("live-implied", hasImplied ? formatApy(data.impliedApy) : "--", hasImplied);
-      setCardValue("live-edge", cfg.hasYield && data.earnPct !== null ? formatSignedPct(data.earnPct) : (cfg.hasYield ? "--" : "No yield"), true);
-      setCardValue("live-ppd", String(cfg.pointsPerDay), true);
+      setCardValue("live-yt-price", display.ytPrice > 0 ? "$" + display.ytPrice.toFixed(4) : "--", display.ytPrice > 0);
+      setCardValue("live-days", display.daysLeft > 0 ? String(display.daysLeft) : "--", display.daysLeft > 0);
+      setCardValue("live-apy", cfg.hasYield ? formatApy(assumptions.underlyingApy) : "0.00%", true);
+      setCardValue("live-implied", assumptions.impliedApy > 0 ? formatApy(assumptions.impliedApy) : "--", assumptions.impliedApy > 0);
+      setCardValue("live-edge", cfg.hasYield && assumptions.earnPct !== null ? formatSignedPct(assumptions.earnPct) : (cfg.hasYield ? "--" : "No yield"), true);
+      setCardValue("live-ppd", String(assumptions.pointsPerDay), true);
 
       const footnote = document.getElementById("live-footnote");
       if (!footnote) return;
 
       if (cfg.hasYield) {
-        footnote.textContent = "Underlying APY mostrato qui = versione Pendle normalizzata tra le due scadenze sUSDai. Pendle documenta che l'underlying APY e' una media storica a 7 giorni, quindi puo' differire dal numero real-time sul dashboard USD.ai.";
+        const presetPct = ((cfg.defaultUnderlyingApy || 0) * 100).toFixed(2);
+        footnote.textContent = "Per sUSDai usiamo un preset APY modificabile di " + presetPct + "%, piu' vicino al dashboard USD.ai. I dati Pendle restano il preset iniziale per prezzo, giorni e implied yield.";
       } else {
-        footnote.textContent = "USDai non ha native yield: su questo market guardi soprattutto prezzo YT, giorni rimasti e punti per YT.";
+        footnote.textContent = "USDai non ha native yield: i bottoni caricano il market live, poi puoi comunque cambiare prezzo, giorni e punti per fare scenari diversi.";
       }
+    }
+
+    function applyPresetToControls(data) {
+      const cfg = MARKET_CONFIG[selectedMarket];
+      const preset = data || getSelectedMarketData();
+      const underlyingSlider = document.getElementById("underlyingApyPct");
+      setSliderValue("ytPrice", preset.ytPrice || 0.01, 4);
+      setSliderValue("daysLeft", preset.daysLeft || 67, 0);
+      setSliderValue("underlyingApyPct", cfg.hasYield ? (cfg.defaultUnderlyingApy * 100) : 0, 2);
+      setSliderValue("impliedApyPct", (preset.impliedApy || 0) * 100, 2);
+      setSliderValue("pointsPerDay", preset.pointsPerDay || cfg.pointsPerDay, 0);
+      if (underlyingSlider) underlyingSlider.disabled = !cfg.hasYield;
+      renderLiveCards(preset);
+      update();
     }
 
     function setInvestment(amount) {
@@ -965,8 +1081,7 @@
       document.querySelectorAll(".token-btn").forEach((btn) => {
         btn.classList.toggle("active", btn.dataset.market === marketId);
       });
-      renderLiveCards(getSelectedMarketData());
-      update();
+      applyPresetToControls(getSelectedMarketData());
       if (!liveData[marketId] && !isFetching) {
         fetchLiveData();
       }
@@ -977,22 +1092,13 @@
       const details = rawMarket.details || {};
       const daysLeft = calculateDaysLeft(rawMarket.expiry);
       const impliedApy = toNumber(details.impliedApy, rawMarket.impliedApy, 0);
-      let underlyingApy = cfg.hasYield
-        ? toNumber(details.underlyingApy, rawMarket.underlyingApy, details.aggregatedApy, rawMarket.aggregatedApy, 0)
-        : 0;
-
-      if (!cfg.hasYield) underlyingApy = 0;
-
       const directYtPrice = toNumber(
         rawMarket.yt && rawMarket.yt.price && rawMarket.yt.price.usd,
         rawMarket.ytPriceUsd,
         rawMarket.ytPrice,
         0
       );
-
-      const ytPrice = directYtPrice > 0
-        ? directYtPrice
-        : calculateYtPrice(impliedApy, daysLeft, 1);
+      const ytPrice = directYtPrice > 0 ? directYtPrice : calculateYtPrice(impliedApy, daysLeft, 1);
 
       return {
         marketAddress: rawMarket.address || "",
@@ -1000,22 +1106,11 @@
         expiryLabel: formatExpiryLabel(rawMarket.expiry),
         ytPrice,
         daysLeft,
-        underlyingApy,
+        underlyingApy: cfg.defaultUnderlyingApy || 0,
         impliedApy,
-        earnPct: calculateEarnPct(underlyingApy, impliedApy, cfg.hasYield),
+        earnPct: calculateEarnPct(cfg.defaultUnderlyingApy || 0, impliedApy, cfg.hasYield),
         pointsPerDay: cfg.pointsPerDay,
       };
-    }
-
-    function normalizeUnderlyingApys(dataMap) {
-      const susdaiKeys = Object.keys(dataMap).filter((key) => MARKET_CONFIG[key].token === "susdai" && dataMap[key].underlyingApy > 0);
-      if (susdaiKeys.length < 2) return;
-
-      const normalized = susdaiKeys.reduce((sum, key) => sum + dataMap[key].underlyingApy, 0) / susdaiKeys.length;
-      susdaiKeys.forEach((key) => {
-        dataMap[key].underlyingApy = normalized;
-        dataMap[key].earnPct = calculateEarnPct(normalized, dataMap[key].impliedApy, true);
-      });
     }
 
     function updateMarketButtons(dataMap) {
@@ -1058,14 +1153,13 @@
           nextData["susdai-oct"] = parseMarket(susdaiMarkets[susdaiMarkets.length - 1], "susdai-oct");
         }
 
-        normalizeUnderlyingApys(nextData);
         liveData = nextData;
         updateMarketButtons(nextData);
-        renderLiveCards(getSelectedMarketData());
+        applyPresetToControls(getSelectedMarketData());
 
         if (getSelectedMarketData().daysLeft > 0) {
           status.className = "live-badge";
-          statusText.textContent = "Live da Pendle";
+          statusText.textContent = "Preset live da Pendle";
           document.getElementById("manual-fallback").classList.remove("show");
         } else {
           status.className = "live-badge error";
@@ -1087,50 +1181,53 @@
 
     function update() {
       const cfg = MARKET_CONFIG[selectedMarket];
-      const market = getSelectedMarketData();
+      const assumptions = getCurrentAssumptions();
       const investment = toNumber(document.getElementById("investment").value, 0);
       const totalPointsB = toNumber(document.getElementById("totalPointsB").value, 0);
       const airdropPoolM = toNumber(document.getElementById("airdropPoolM").value, 0);
 
+      document.getElementById("ytp-val").textContent = "$" + assumptions.ytPrice.toFixed(4);
+      document.getElementById("days-val").textContent = assumptions.daysLeft.toFixed(0);
+      document.getElementById("uapy-val").textContent = assumptions.underlyingApy > 0 ? formatApy(assumptions.underlyingApy) : "0.00%";
+      document.getElementById("iapy-val").textContent = assumptions.impliedApy > 0 ? formatApy(assumptions.impliedApy) : "0.00%";
+      document.getElementById("ppd-val").textContent = assumptions.pointsPerDay.toFixed(0);
       document.getElementById("tp-val").textContent = totalPointsB + "B";
       document.getElementById("ap-val").textContent = "$" + airdropPoolM + "M";
 
-      const ytAmount = market.ytPrice > 0 ? investment / market.ytPrice : 0;
-      const notionalControlled = ytAmount;
-      const dailyPoints = ytAmount * cfg.pointsPerDay;
-      const totalPoints = dailyPoints * market.daysLeft;
+      const ytAmount = assumptions.ytPrice > 0 ? investment / assumptions.ytPrice : 0;
+      const dailyPoints = ytAmount * assumptions.pointsPerDay;
+      const totalPoints = dailyPoints * assumptions.daysLeft;
       const sharePct = totalPointsB > 0 ? (totalPoints / (totalPointsB * 1e9)) * 100 : 0;
       const baseAirdropValue = (sharePct / 100) * airdropPoolM * 1e6;
-      const grossYield = cfg.hasYield ? notionalControlled * market.underlyingApy * (market.daysLeft / 365) : 0;
+      const grossYield = cfg.hasYield ? ytAmount * assumptions.underlyingApy * (assumptions.daysLeft / 365) : 0;
+      const pnl = baseAirdropValue + grossYield - investment;
+      const roi = investment > 0 ? (pnl / investment) * 100 : 0;
+      const pointsPerMillion = assumptions.ytPrice > 0 ? (1000000 / assumptions.ytPrice) * assumptions.pointsPerDay * assumptions.daysLeft : 0;
+      const airdropPerMillion = totalPointsB > 0 ? (pointsPerMillion / (totalPointsB * 1e9)) * airdropPoolM * 1e6 : 0;
 
       document.getElementById("stat-yt").textContent = formatNumber(ytAmount);
       document.getElementById("stat-daily").textContent = formatNumber(dailyPoints);
       document.getElementById("stat-total").textContent = formatNumber(totalPoints);
-      document.getElementById("stat-notional").textContent = formatUSD(notionalControlled);
+      document.getElementById("stat-per-million").textContent = formatNumber(pointsPerMillion);
       document.getElementById("stat-yield").textContent = formatUSD(grossYield);
       document.getElementById("stat-airdrop").textContent = formatUSD(baseAirdropValue);
+
+      renderLiveCards({
+        ytPrice: assumptions.ytPrice,
+        daysLeft: assumptions.daysLeft,
+        underlyingApy: assumptions.underlyingApy,
+        impliedApy: assumptions.impliedApy,
+        earnPct: assumptions.earnPct,
+        pointsPerDay: assumptions.pointsPerDay,
+      });
 
       const pnlBox = document.getElementById("pnl-box");
       const pnlValue = document.getElementById("pnl-value");
       const pnlSub = document.getElementById("pnl-sub");
-
-      if (!cfg.hasYield) {
-        pnlBox.className = "pnl-box neutral";
-        pnlValue.className = "pnl-value";
-        pnlValue.textContent = "No native yield";
-        pnlSub.textContent = "USDai YT e' una tesi di prezzo + punti. Underlying APY = 0, quindi il confronto con l'implied serve soprattutto a capire quanto stai pagando il tempo residuo.";
-      } else if (market.earnPct === null) {
-        pnlBox.className = "pnl-box neutral";
-        pnlValue.className = "pnl-value";
-        pnlValue.textContent = "--";
-        pnlSub.textContent = "Carica i dati live per confrontare underlying APY e implied yield sul market selezionato.";
-      } else {
-        const positive = market.earnPct >= 0;
-        pnlBox.className = "pnl-box " + (positive ? "positive" : "negative");
-        pnlValue.className = "pnl-value " + (positive ? "green" : "red");
-        pnlValue.textContent = formatSignedPct(market.earnPct);
-        pnlSub.textContent = "Underlying " + formatApy(market.underlyingApy) + " vs Implied " + formatApy(market.impliedApy) + " | Yield lordo stimato a scadenza: " + formatUSD(grossYield);
-      }
+      pnlBox.className = "pnl-box " + (pnl > 0 ? "positive" : pnl < 0 ? "negative" : "neutral");
+      pnlValue.className = "pnl-value " + (pnl > 0 ? "green" : pnl < 0 ? "red" : "");
+      pnlValue.textContent = formatUSD(pnl);
+      pnlSub.textContent = "Airdrop " + formatUSD(baseAirdropValue) + " + Yield " + formatUSD(grossYield) + " - Investimento " + formatUSD(investment) + " | ROI " + (roi >= 0 ? "+" : "") + roi.toFixed(1) + "%";
 
       const scenarios = [
         { label: "Bear", pool: 7, points: 1200 },
@@ -1142,16 +1239,16 @@
       scenarios.forEach((scenario) => {
         const share = totalPoints / (scenario.points * 1e9);
         const airdrop = share * scenario.pool * 1e6;
-        const profit = airdrop + grossYield - investment;
-        const roi = investment > 0 ? (profit / investment) * 100 : 0;
-        const color = getRoiColor(roi);
-        const barWidth = Math.min(Math.abs(roi), 500) / 5;
+        const scenarioPnl = airdrop + grossYield - investment;
+        const scenarioRoi = investment > 0 ? (scenarioPnl / investment) * 100 : 0;
+        const color = getRoiColor(scenarioRoi);
+        const barWidth = Math.min(Math.abs(scenarioRoi), 500) / 5;
 
         html += `
           <div class="roi-bar">
             <div class="roi-header">
               <span class="roi-label">${scenario.label} ($${scenario.pool}M pool | ${scenario.points}B pts)</span>
-              <span class="roi-value" style="color:${color}">${formatUSD(profit)} (${roi >= 0 ? "+" : ""}${roi.toFixed(0)}%)</span>
+              <span class="roi-value" style="color:${color}">${formatUSD(scenarioPnl)} (${scenarioRoi >= 0 ? "+" : ""}${scenarioRoi.toFixed(0)}%)</span>
             </div>
             <div class="roi-track">
               <div class="roi-fill" style="width:${barWidth}%;background:${color}"></div>
@@ -1161,16 +1258,15 @@
       });
       document.getElementById("scenarios-container").innerHTML = html;
 
-      document.getElementById("scenario-note").textContent = cfg.hasYield
-        ? "Per sUSDai usiamo un underlying APY Pendle normalizzato tra le due scadenze. Pendle documenta che questo numero puo' divergere dal dashboard USD.ai perche' e' una media storica."
-        : "Per USDai il rendimento economico viene da punti, pricing del YT e scenario airdrop: native yield = 0.";
+      document.getElementById("scenario-note").textContent =
+        "Stima per $1M investiti con questi slider: " + formatNumber(pointsPerMillion) + " punti e circa " + formatUSD(airdropPerMillion) + " di airdrop base. I bottoni sopra sono solo preset iniziali.";
     }
 
     function applyManualData() {
       const cfg = MARKET_CONFIG[selectedMarket];
-      const ytPrice = toNumber(document.getElementById("manual-yt-price").value, 0);
-      const daysLeft = toNumber(document.getElementById("manual-days").value, 0);
-      const underlyingApy = cfg.hasYield ? toNumber(document.getElementById("manual-apy").value, 0) / 100 : 0;
+      const ytPrice = toNumber(document.getElementById("manual-yt-price").value, 0.01);
+      const daysLeft = toNumber(document.getElementById("manual-days").value, 67);
+      const underlyingApy = cfg.hasYield ? toNumber(document.getElementById("manual-apy").value, cfg.defaultUnderlyingApy * 100) / 100 : 0;
       const impliedApy = toNumber(document.getElementById("manual-implied").value, 0) / 100;
 
       manualData[selectedMarket] = {
@@ -1184,18 +1280,16 @@
         name: "Manuale",
       };
 
-      renderLiveCards(manualData[selectedMarket]);
+      applyPresetToControls(manualData[selectedMarket]);
 
       const status = document.getElementById("live-status");
       const statusText = document.getElementById("live-status-text");
       status.className = "live-badge";
       statusText.textContent = "Dati manuali";
-      update();
     }
 
-    renderLiveCards(getSelectedMarketData());
+    applyPresetToControls(getSelectedMarketData());
     document.getElementById("investment").value = document.getElementById("investment").value || 1000;
-    update();
     fetchLiveData();
   </script>
 </body>
