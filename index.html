@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>USD.ai Airdrop Simulator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+      color: #f1f5f9;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      padding: 24px 16px;
+    }
+    .container { max-width: 520px; margin: 0 auto; }
+
+    .badge {
+      display: inline-block; padding: 4px 12px;
+      background: rgba(99,102,241,0.15); border-radius: 20px;
+      font-size: 11px; color: #818cf8; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 10px;
+    }
+    h1 {
+      font-size: 28px; font-weight: 800; margin: 0 0 6px 0;
+      background: linear-gradient(135deg, #e2e8f0 0%, #818cf8 50%, #6366f1 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.2;
+    }
+    .subtitle { color: #64748b; font-size: 13px; }
+    .header { text-align: center; margin-bottom: 28px; }
+
+    .card {
+      background: rgba(15,23,42,0.6); border: 1px solid rgba(99,102,241,0.1);
+      border-radius: 16px; padding: 20px; margin-bottom: 20px;
+    }
+
+    /* Token Toggle */
+    .token-toggle {
+      display: flex; gap: 0; margin-bottom: 20px; border-radius: 12px; overflow: hidden;
+      border: 1px solid rgba(99,102,241,0.2);
+    }
+    .token-btn {
+      flex: 1; padding: 12px 8px; text-align: center; cursor: pointer;
+      background: rgba(15,23,42,0.4); color: #64748b;
+      font-size: 13px; font-weight: 600; border: none;
+      transition: all 0.2s ease; position: relative;
+    }
+    .token-btn:first-child { border-right: 1px solid rgba(99,102,241,0.2); }
+    .token-btn.active {
+      background: rgba(99,102,241,0.15); color: #818cf8;
+    }
+    .token-btn .token-sub { font-size: 10px; color: #475569; display: block; margin-top: 2px; font-weight: 400; }
+    .token-btn.active .token-sub { color: #6366f1; }
+
+    /* Live badge */
+    .live-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px; flex-wrap: wrap; gap: 8px;
+    }
+    .live-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 600;
+      background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); color: #22c55e;
+    }
+    .live-badge.stale { background: rgba(234,179,8,0.1); border-color: rgba(234,179,8,0.2); color: #eab308; }
+    .live-badge.error { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.2); color: #ef4444; }
+    .live-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: #22c55e;
+      animation: pulse 2s infinite;
+    }
+    .live-badge.stale .live-dot { background: #eab308; animation: none; }
+    .live-badge.error .live-dot { background: #ef4444; animation: none; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .fetch-btn {
+      padding: 6px 14px; border-radius: 8px; font-size: 11px; font-weight: 600;
+      cursor: pointer; border: 1px solid rgba(99,102,241,0.3);
+      background: rgba(99,102,241,0.1); color: #818cf8;
+      transition: all 0.2s ease;
+    }
+    .fetch-btn:hover { background: rgba(99,102,241,0.2); }
+    .fetch-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Live data cards */
+    .live-data-grid {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px;
+    }
+    .live-card {
+      background: rgba(99,102,241,0.05); border: 1px solid rgba(99,102,241,0.1);
+      border-radius: 10px; padding: 10px; text-align: center;
+    }
+    .live-card-label { font-size: 9px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+    .live-card-value { font-size: 14px; font-weight: 700; color: #e2e8f0; }
+    .live-card-value.loading { color: #475569; }
+
+    /* Sliders */
+    .slider-group { margin-bottom: 20px; }
+    .slider-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+    .slider-label { color: #94a3b8; font-size: 13px; font-weight: 500; }
+    .slider-value { color: #f1f5f9; font-size: 14px; font-weight: 700; }
+    input[type="range"] { width: 100%; accent-color: #6366f1; cursor: pointer; height: 6px; }
+    .slider-bounds { display: flex; justify-content: space-between; font-size: 11px; color: #475569; margin-top: 2px; }
+
+    /* Yield recovery section */
+    .yield-section { margin-top: 4px; padding-top: 16px; border-top: 1px solid rgba(99,102,241,0.08); }
+    .yield-note { font-size: 11px; color: #64748b; margin-bottom: 12px; line-height: 1.4; }
+    .yield-hidden { display: none; }
+
+    /* Stats Grid */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    .stat-card {
+      background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(99,102,241,0.02) 100%);
+      border: 1px solid rgba(99,102,241,0.15); border-radius: 12px;
+      padding: 14px 16px; text-align: center;
+    }
+    .stat-card.large { padding: 20px 16px; }
+    .stat-label { color: #94a3b8; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .stat-value { font-size: 20px; font-weight: 800; line-height: 1.2; color: #f1f5f9; }
+    .stat-card.large .stat-value { font-size: 28px; }
+    .stat-value.purple { color: #818cf8; }
+    .stat-value.cyan { color: #22d3ee; }
+
+    /* P&L Box */
+    .pnl-box { border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 20px; transition: all 0.3s ease; }
+    .pnl-box.positive { background: linear-gradient(135deg, rgba(34,197,94,0.1) 0%, rgba(34,197,94,0.02) 100%); border: 1px solid rgba(34,197,94,0.2); }
+    .pnl-box.negative { background: linear-gradient(135deg, rgba(239,68,68,0.1) 0%, rgba(239,68,68,0.02) 100%); border: 1px solid rgba(239,68,68,0.2); }
+    .pnl-label { color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .pnl-value { font-size: 36px; font-weight: 800; }
+    .pnl-value.green { color: #22c55e; }
+    .pnl-value.red { color: #ef4444; }
+    .pnl-sub { color: #64748b; font-size: 13px; margin-top: 2px; }
+
+    /* Scenarios */
+    .scenario-title { font-size: 14px; font-weight: 700; margin-bottom: 14px; color: #e2e8f0; }
+    .roi-bar { margin-bottom: 10px; }
+    .roi-header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 3px; }
+    .roi-label { color: #94a3b8; }
+    .roi-value { font-weight: 700; }
+    .roi-track { background: #1e293b; border-radius: 4px; height: 8px; overflow: hidden; }
+    .roi-fill { height: 100%; border-radius: 4px; transition: width 0.3s ease; }
+    .scenario-note { font-size: 11px; color: #475569; margin-top: 8px; }
+
+    /* Manual input fallback */
+    .manual-fallback { display: none; margin-top: 12px; }
+    .manual-fallback.show { display: block; }
+    .manual-note { font-size: 11px; color: #94a3b8; margin-bottom: 8px; line-height: 1.4; }
+    .manual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .manual-input-group label { display: block; font-size: 10px; color: #64748b; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .manual-input-group input {
+      width: 100%; padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(99,102,241,0.2);
+      background: rgba(15,23,42,0.8); color: #e2e8f0; font-size: 13px; font-family: inherit;
+    }
+    .manual-input-group input:focus { outline: none; border-color: #6366f1; }
+    .manual-apply-btn {
+      margin-top: 10px; width: 100%; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 600;
+      cursor: pointer; border: 1px solid rgba(99,102,241,0.3);
+      background: rgba(99,102,241,0.15); color: #818cf8; transition: all 0.2s ease;
+    }
+    .manual-apply-btn:hover { background: rgba(99,102,241,0.25); }
+
+    /* Disclaimer */
+    .disclaimer { background: rgba(234,179,8,0.06); border: 1px solid rgba(234,179,8,0.15); border-radius: 12px; padding: 14px; margin-bottom: 20px; }
+    .disclaimer-title { font-size: 11px; color: #eab308; font-weight: 600; margin-bottom: 4px; }
+    .disclaimer-text { font-size: 11px; color: #94a3b8; line-height: 1.5; }
+
+    /* CTA */
+    .cta-btn {
+      display: block; width: 100%; padding: 16px 0;
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      color: white; text-align: center; border-radius: 12px; font-size: 16px; font-weight: 700;
+      text-decoration: none; letter-spacing: 0.3px;
+      box-shadow: 0 4px 20px rgba(99,102,241,0.3);
+      margin-bottom: 8px; cursor: pointer; border: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .cta-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(99,102,241,0.4); }
+    .cta-sub { text-align: center; font-size: 11px; color: #475569; margin-bottom: 24px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="badge">YIELD TOKEN CALCULATOR</div>
+      <h1>USD.ai Airdrop Simulator</h1>
+      <p class="subtitle">Calcola il tuo potenziale rendimento. Muovi gli slider per esplorare gli scenari.</p>
+    </div>
+
+    <!-- Token Toggle -->
+    <div class="token-toggle">
+      <button class="token-btn active" onclick="selectToken('usdai')">
+        YT USDai
+        <span class="token-sub">Solo punti, no yield</span>
+      </button>
+      <button class="token-btn" onclick="selectToken('susdai')">
+        YT sUSDai
+        <span class="token-sub">Punti + Yield Recovery</span>
+      </button>
+    </div>
+
+    <!-- Live Data Section -->
+    <div class="card" id="live-section">
+      <div class="live-row">
+        <div class="live-badge stale" id="live-status">
+          <div class="live-dot"></div>
+          <span id="live-status-text">Non connesso</span>
+        </div>
+        <button class="fetch-btn" id="fetch-btn" onclick="fetchLiveData()">
+          Carica dati live
+        </button>
+      </div>
+      <div class="live-data-grid">
+        <div class="live-card">
+          <div class="live-card-label">Prezzo YT</div>
+          <div class="live-card-value loading" id="live-yt-price">--</div>
+        </div>
+        <div class="live-card">
+          <div class="live-card-label">TVL Mercato</div>
+          <div class="live-card-value loading" id="live-tvl">--</div>
+        </div>
+        <div class="live-card">
+          <div class="live-card-label">Giorni rimasti</div>
+          <div class="live-card-value loading" id="live-days">--</div>
+        </div>
+        <div class="live-card" id="live-apy-card">
+          <div class="live-card-label">Underlying APY</div>
+          <div class="live-card-value loading" id="live-apy">--</div>
+        </div>
+        <div class="live-card">
+          <div class="live-card-label">Implied APY</div>
+          <div class="live-card-value loading" id="live-implied">--</div>
+        </div>
+        <div class="live-card">
+          <div class="live-card-label">Punti finali (stima)</div>
+          <div class="live-card-value loading" id="live-est-points">--</div>
+        </div>
+      </div>
+
+      <!-- Manual fallback -->
+      <div class="manual-fallback" id="manual-fallback">
+        <div class="manual-note">
+          Il fetch automatico non funziona in questo ambiente. Inserisci i dati manualmente da
+          <a href="https://app.pendle.finance" target="_blank" style="color:#818cf8">app.pendle.finance</a>:
+        </div>
+        <div class="manual-grid">
+          <div class="manual-input-group">
+            <label>Prezzo YT ($)</label>
+            <input type="number" id="manual-yt-price" step="0.0001" placeholder="es. 0.0135">
+          </div>
+          <div class="manual-input-group">
+            <label>Giorni alla scadenza</label>
+            <input type="number" id="manual-days" step="1" placeholder="es. 67">
+          </div>
+          <div class="manual-input-group">
+            <label>TVL mercato ($)</label>
+            <input type="number" id="manual-tvl" step="1000000" placeholder="es. 300000000">
+          </div>
+          <div class="manual-input-group" id="manual-apy-group">
+            <label>Underlying APY (%)</label>
+            <input type="number" id="manual-apy" step="0.1" placeholder="es. 15.0">
+          </div>
+        </div>
+        <button class="manual-apply-btn" onclick="applyManualData()">Applica dati manuali</button>
+      </div>
+    </div>
+
+    <!-- Sliders -->
+    <div class="card">
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-label">Investimento</span>
+          <span class="slider-value" id="inv-val">$1,000</span>
+        </div>
+        <input type="range" id="investment" min="100" max="50000" step="100" value="1000" oninput="update()">
+        <div class="slider-bounds"><span>$100</span><span>$50,000</span></div>
+      </div>
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-label">Prezzo YT</span>
+          <span class="slider-value" id="ytp-val">$0.0135</span>
+        </div>
+        <input type="range" id="ytPrice" min="0.001" max="0.10" step="0.0005" value="0.0135" oninput="update()">
+        <div class="slider-bounds"><span>$0.0010</span><span>$0.1000</span></div>
+      </div>
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-label">Punti per YT al giorno</span>
+          <span class="slider-value" id="ppd-val">12</span>
+        </div>
+        <input type="range" id="pointsPerDay" min="1" max="30" step="1" value="12" oninput="update()">
+        <div class="slider-bounds"><span>1</span><span>30</span></div>
+      </div>
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-label">Giorni rimanenti</span>
+          <span class="slider-value" id="days-val">67</span>
+        </div>
+        <input type="range" id="daysLeft" min="1" max="200" step="1" value="67" oninput="update()">
+        <div class="slider-bounds"><span>1</span><span>200</span></div>
+      </div>
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-label">Punti totali season (stima)</span>
+          <span class="slider-value" id="tp-val">700B</span>
+        </div>
+        <input type="range" id="totalPointsB" min="200" max="2000" step="10" value="700" oninput="update()">
+        <div class="slider-bounds"><span>200B</span><span>2000B</span></div>
+      </div>
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-label">Airdrop Pool</span>
+          <span class="slider-value" id="ap-val">$15M</span>
+        </div>
+        <input type="range" id="airdropPoolM" min="1" max="50" step="1" value="15" oninput="update()">
+        <div class="slider-bounds"><span>$1M</span><span>$50M</span></div>
+      </div>
+
+      <!-- Yield Recovery (only for sUSDai) -->
+      <div class="yield-section yield-hidden" id="yield-section">
+        <div class="yield-note">
+          sUSDai genera yield reale dal protocollo. Stima quanto recuperi dell'investimento iniziale tramite yield prima della scadenza.
+        </div>
+        <div class="slider-group">
+          <div class="slider-header">
+            <span class="slider-label">Yield Recovery</span>
+            <span class="slider-value" id="yr-val">85%</span>
+          </div>
+          <input type="range" id="yieldRecoveryPct" min="0" max="100" step="5" value="85" oninput="update()">
+          <div class="slider-bounds"><span>0%</span><span>100%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">YT Acquistati</div>
+        <div class="stat-value" id="stat-yt">74.1K</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Punti / Giorno</div>
+        <div class="stat-value" id="stat-daily">888.9K</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Punti Totali</div>
+        <div class="stat-value" id="stat-total">59.56M</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">La Tua Share</div>
+        <div class="stat-value" id="stat-share">0.00851%</div>
+      </div>
+      <div class="stat-card large">
+        <div class="stat-label">Valore Airdrop</div>
+        <div class="stat-value purple" id="stat-airdrop">$1276</div>
+      </div>
+      <div class="stat-card large" id="yield-card">
+        <div class="stat-label">Yield Recuperato</div>
+        <div class="stat-value cyan" id="stat-yield">$0</div>
+      </div>
+    </div>
+
+    <!-- P&L Box -->
+    <div class="pnl-box positive" id="pnl-box">
+      <div class="pnl-label">Profitto Netto (Airdrop + Yield - Investimento)</div>
+      <div class="pnl-value green" id="pnl-value">$276</div>
+      <div class="pnl-sub" id="pnl-sub">ROI: +27.6% · Costo netto: $1000</div>
+    </div>
+
+    <!-- Scenarios -->
+    <div class="card">
+      <div class="scenario-title">Scenari a confronto</div>
+      <div id="scenarios-container"></div>
+      <div class="scenario-note" id="scenario-note"></div>
+    </div>
+
+    <!-- Disclaimer -->
+    <div class="disclaimer">
+      <div class="disclaimer-title">DISCLAIMER</div>
+      <div class="disclaimer-text">Questo simulatore ha scopo puramente educativo. I risultati sono stime basate sugli input forniti. L'airdrop non &egrave; garantito e i parametri possono cambiare. Non &egrave; un consiglio finanziario. DYOR.</div>
+    </div>
+
+    <!-- CTA -->
+    <a href="https://app.usd.ai/i/aclm7" target="_blank" rel="noopener noreferrer" class="cta-btn">
+      Prova USD.ai &rarr;
+    </a>
+    <div class="cta-sub">10% referral bonus per chi si registra da qui</div>
+  </div>
+
+  <script>
+    // ── State ──
+    let selectedToken = "usdai"; // "usdai" or "susdai"
+    let liveData = null;
+
+    // Season constants
+    const SEASON_START = new Date("2025-02-19T00:00:00Z");
+    const SEASON_END = new Date("2025-10-19T00:00:00Z");
+    const SEASON_DAYS = (SEASON_END - SEASON_START) / (1000 * 60 * 60 * 24);
+
+    // Pendle API config — Arbitrum chain ID
+    const CHAIN_ID = 42161;
+    const API_BASE = "https://api-v2.pendle.finance/core";
+    // CORS proxies to try (needed when running from file:// or different origin)
+    const CORS_PROXIES = [
+      { name: "direct", fn: (url) => url },
+      { name: "corsproxy.io", fn: (url) => "https://corsproxy.io/?" + encodeURIComponent(url) },
+      { name: "allorigins", fn: (url) => "https://api.allorigins.win/raw?url=" + encodeURIComponent(url) },
+      { name: "cors.sh", fn: (url) => "https://proxy.cors.sh/" + url },
+    ];
+
+    function timeoutPromise(ms) {
+      return new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms));
+    }
+
+    async function fetchWithCors(url) {
+      const errors = [];
+      for (const proxy of CORS_PROXIES) {
+        try {
+          const proxyUrl = proxy.fn(url);
+          console.log("[CORS] Trying " + proxy.name + ": " + proxyUrl);
+          const headers = proxy.name === "cors.sh" ? { "x-cors-api-key": "temp_" + Date.now() } : {};
+          const res = await Promise.race([
+            fetch(proxyUrl, { headers }),
+            timeoutPromise(8000)
+          ]);
+          if (res.ok) {
+            console.log("[CORS] Success via " + proxy.name);
+            return res;
+          }
+          errors.push(proxy.name + ": HTTP " + res.status);
+        } catch (e) {
+          errors.push(proxy.name + ": " + e.message);
+        }
+      }
+      throw new Error("Nessun proxy funzionante. Dettagli: " + errors.join(" | "));
+    }
+
+    // ── Helpers ──
+    function formatNumber(n) {
+      if (n >= 1e12) return (n / 1e12).toFixed(2) + "T";
+      if (n >= 1e9) return (n / 1e9).toFixed(2) + "B";
+      if (n >= 1e6) return (n / 1e6).toFixed(2) + "M";
+      if (n >= 1e3) return (n / 1e3).toFixed(1) + "K";
+      return n.toFixed(0);
+    }
+    function formatUSD(n) {
+      if (n < 0) return "-$" + Math.abs(n).toFixed(0);
+      return "$" + n.toFixed(0);
+    }
+    function getRoiColor(roi) {
+      if (roi < 0) return "#ef4444";
+      if (roi > 200) return "#22c55e";
+      if (roi > 50) return "#84cc16";
+      return "#eab308";
+    }
+
+    // ── Token Toggle ──
+    function selectToken(token) {
+      selectedToken = token;
+      document.querySelectorAll(".token-btn").forEach((btn, i) => {
+        btn.classList.toggle("active", (i === 0 && token === "usdai") || (i === 1 && token === "susdai"));
+      });
+
+      const yieldSection = document.getElementById("yield-section");
+      const yieldCard = document.getElementById("yield-card");
+
+      if (token === "usdai") {
+        yieldSection.classList.add("yield-hidden");
+        // USDai has no yield recovery
+        document.getElementById("yieldRecoveryPct").value = 0;
+      } else {
+        yieldSection.classList.remove("yield-hidden");
+        document.getElementById("yieldRecoveryPct").value = 85;
+      }
+
+      // If we have live data cached, apply for the selected token
+      if (liveData && liveData[token]) {
+        applyLiveData(liveData[token]);
+      }
+
+      update();
+    }
+
+    // ── Live Data Fetch ──
+    async function fetchLiveData() {
+      const btn = document.getElementById("fetch-btn");
+      const status = document.getElementById("live-status");
+      const statusText = document.getElementById("live-status-text");
+
+      btn.disabled = true;
+      btn.textContent = "Caricamento...";
+      status.className = "live-badge stale";
+      statusText.textContent = "Connessione...";
+
+      try {
+        // Fetch active markets from Pendle API (via CORS proxy)
+        const res = await fetchWithCors(`${API_BASE}/v1/${CHAIN_ID}/markets/active`);
+        const data = await res.json();
+
+        // The response could be { results: [...] } or just an array
+        const markets = Array.isArray(data) ? data : (data.results || data.markets || []);
+
+        // Find USDai and sUSDai markets (look for active, non-matured ones)
+        const now = Date.now();
+        let usdaiMarket = null;
+        let susdaiMarket = null;
+
+        for (const m of markets) {
+          const name = (m.name || m.symbol || m.proName || "").toLowerCase();
+          const expiry = m.expiry ? new Date(m.expiry).getTime() : (m.expiryTimestamp ? m.expiryTimestamp * 1000 : 0);
+
+          // Skip matured markets
+          if (expiry && expiry < now) continue;
+
+          if (name.includes("susdai") || name.includes("s-usdai") || name.includes("staked usdai")) {
+            // Prefer the one with furthest expiry or highest liquidity
+            if (!susdaiMarket || (m.liquidity && m.liquidity.usd > (susdaiMarket.liquidity?.usd || 0))) {
+              susdaiMarket = m;
+            }
+          } else if (name.includes("usdai")) {
+            if (!usdaiMarket || (m.liquidity && m.liquidity.usd > (usdaiMarket.liquidity?.usd || 0))) {
+              usdaiMarket = m;
+            }
+          }
+        }
+
+        liveData = {};
+
+        if (usdaiMarket) {
+          liveData.usdai = parseMarketData(usdaiMarket);
+        }
+        if (susdaiMarket) {
+          liveData.susdai = parseMarketData(susdaiMarket);
+        }
+
+        // If we didn't find by name, try fetching specific known addresses
+        if (!usdaiMarket || !susdaiMarket) {
+          // Try known market addresses as fallback
+          const knownMarkets = {
+            usdai: "0xa8a0dea40174cfc30fea9e3a77f182ab33f46e25",
+            susdai: "0x2092fa5d02276b3136a50f3c2c3a6ed45413183e"
+          };
+
+          for (const [token, addr] of Object.entries(knownMarkets)) {
+            if (liveData[token]) continue; // Already found
+            try {
+              const mRes = await fetchWithCors(`${API_BASE}/v2/${CHAIN_ID}/markets/${addr}`);
+              if (mRes.ok) {
+                const mData = await mRes.json();
+                liveData[token] = parseMarketData(mData);
+              }
+            } catch (e) { /* skip */ }
+          }
+        }
+
+        // Apply data for currently selected token
+        const current = liveData[selectedToken];
+        if (current) {
+          applyLiveData(current);
+          status.className = "live-badge";
+          statusText.textContent = "Live";
+        } else {
+          status.className = "live-badge error";
+          statusText.textContent = "Mercato non trovato";
+        }
+
+      } catch (err) {
+        console.error("Fetch error:", err);
+        status.className = "live-badge error";
+        statusText.textContent = "Fetch non disponibile";
+        // Show manual fallback
+        document.getElementById("manual-fallback").classList.add("show");
+      }
+
+      btn.disabled = false;
+      btn.textContent = "Aggiorna dati";
+    }
+
+    function parseMarketData(m) {
+      // Extract fields — Pendle API may use different field names
+      // Common fields: pt.price, yt.price, liquidity.usd, expiry, underlyingApy, impliedApy
+      const ytPrice = m.yt?.price || m.ytPrice || m.ytPriceUsd || 0;
+      const tvl = m.liquidity?.usd || m.totalLiquidity || m.tvl || m.totalTvl || 0;
+      const expiry = m.expiry || m.expiryTimestamp;
+      const underlyingApy = m.underlyingApy || m.underlyingInterestApy || m.aggregatedApy || 0;
+      const impliedApy = m.impliedApy || m.ytImpliedApy || 0;
+
+      let daysLeft = 0;
+      if (expiry) {
+        const expiryMs = typeof expiry === "number" && expiry < 1e12 ? expiry * 1000 : new Date(expiry).getTime();
+        daysLeft = Math.max(0, Math.round((expiryMs - Date.now()) / (1000 * 60 * 60 * 24)));
+      }
+
+      return { ytPrice, tvl, daysLeft, underlyingApy, impliedApy };
+    }
+
+    function applyLiveData(data) {
+      // Update live display cards
+      document.getElementById("live-yt-price").textContent = data.ytPrice ? "$" + data.ytPrice.toFixed(4) : "--";
+      document.getElementById("live-yt-price").classList.toggle("loading", !data.ytPrice);
+
+      document.getElementById("live-tvl").textContent = data.tvl ? "$" + formatNumber(data.tvl) : "--";
+      document.getElementById("live-tvl").classList.toggle("loading", !data.tvl);
+
+      document.getElementById("live-days").textContent = data.daysLeft || "--";
+      document.getElementById("live-days").classList.toggle("loading", !data.daysLeft);
+
+      document.getElementById("live-apy").textContent = data.underlyingApy ? (data.underlyingApy * 100).toFixed(1) + "%" : "--";
+      document.getElementById("live-apy").classList.toggle("loading", !data.underlyingApy);
+
+      document.getElementById("live-implied").textContent = data.impliedApy ? (data.impliedApy * 100).toFixed(1) + "%" : "--";
+      document.getElementById("live-implied").classList.toggle("loading", !data.impliedApy);
+
+      // Estimate final season points based on current TVL
+      // Assumption: current TVL generates points proportionally
+      // Points already farmed: ~171B (user's estimate as of conversation)
+      // We estimate daily points rate from TVL, then project to season end
+      if (data.tvl) {
+        const now = new Date();
+        const daysElapsed = Math.max(1, (now - SEASON_START) / (1000 * 60 * 60 * 24));
+        const daysRemaining = Math.max(0, (SEASON_END - now) / (1000 * 60 * 60 * 24));
+        // Rough estimate: total points so far / days elapsed * total season days
+        // We use TVL as proxy — assume ~171B points were farmed in first ~51 days at ~500M avg TVL
+        // Scale by current TVL
+        const currentDailyRate = 171e9 / daysElapsed; // approximate daily point rate
+        const projectedTotal = 171e9 + (currentDailyRate * daysRemaining);
+        const estPointsB = Math.round(projectedTotal / 1e9);
+
+        document.getElementById("live-est-points").textContent = estPointsB + "B";
+        document.getElementById("live-est-points").classList.remove("loading");
+
+        // Set slider to estimated value
+        document.getElementById("totalPointsB").value = Math.min(2000, Math.max(200, estPointsB));
+      }
+
+      // Set sliders from live data
+      if (data.ytPrice && data.ytPrice > 0.001 && data.ytPrice < 0.10) {
+        document.getElementById("ytPrice").value = data.ytPrice;
+      }
+      if (data.daysLeft) {
+        document.getElementById("daysLeft").value = data.daysLeft;
+      }
+
+      // For sUSDai: calculate yield recovery from underlying APY
+      if (selectedToken === "susdai" && data.underlyingApy && data.daysLeft) {
+        // Yield recovery = underlyingApy * (daysLeft/365) as fraction of investment
+        // This is simplified — actual recovery depends on compounding
+        const yieldFraction = data.underlyingApy * (data.daysLeft / 365);
+        const recoveryPct = Math.min(100, Math.round(yieldFraction * 100));
+        document.getElementById("yieldRecoveryPct").value = recoveryPct;
+      }
+
+      update();
+    }
+
+    // ── Main update ──
+    function update() {
+      const inv = +document.getElementById("investment").value;
+      const ytp = +document.getElementById("ytPrice").value;
+      const ppd = +document.getElementById("pointsPerDay").value;
+      const days = +document.getElementById("daysLeft").value;
+      const tpB = +document.getElementById("totalPointsB").value;
+      const apM = +document.getElementById("airdropPoolM").value;
+      const yrP = selectedToken === "susdai" ? +document.getElementById("yieldRecoveryPct").value : 0;
+
+      // Slider labels
+      document.getElementById("inv-val").textContent = "$" + inv.toLocaleString();
+      document.getElementById("ytp-val").textContent = "$" + ytp.toFixed(4);
+      document.getElementById("ppd-val").textContent = ppd;
+      document.getElementById("days-val").textContent = days;
+      document.getElementById("tp-val").textContent = tpB + "B";
+      document.getElementById("ap-val").textContent = "$" + apM + "M";
+      document.getElementById("yr-val").textContent = yrP + "%";
+
+      // Calculations
+      const ytAmount = inv / ytp;
+      const dailyPoints = ytAmount * ppd;
+      const totalPoints = dailyPoints * days;
+      const sharePct = (totalPoints / (tpB * 1e9)) * 100;
+      const airdropValue = (sharePct / 100) * apM * 1e6;
+      const yieldRecovered = inv * (yrP / 100);
+      const netCost = inv - yieldRecovered;
+      const profit = airdropValue + yieldRecovered - inv;
+      const roi = (profit / inv) * 100;
+
+      // Stats
+      document.getElementById("stat-yt").textContent = formatNumber(ytAmount);
+      document.getElementById("stat-daily").textContent = formatNumber(dailyPoints);
+      document.getElementById("stat-total").textContent = formatNumber(totalPoints);
+      document.getElementById("stat-share").textContent = sharePct.toFixed(5) + "%";
+      document.getElementById("stat-airdrop").textContent = formatUSD(airdropValue);
+      document.getElementById("stat-yield").textContent = formatUSD(yieldRecovered);
+
+      // Show/hide yield card based on token
+      const yieldCard = document.getElementById("yield-card");
+      if (selectedToken === "usdai") {
+        yieldCard.style.display = "none";
+      } else {
+        yieldCard.style.display = "";
+      }
+
+      // P&L
+      const pnlBox = document.getElementById("pnl-box");
+      const pnlValue = document.getElementById("pnl-value");
+      const pnlSub = document.getElementById("pnl-sub");
+      pnlBox.className = "pnl-box " + (profit >= 0 ? "positive" : "negative");
+      pnlValue.className = "pnl-value " + (profit >= 0 ? "green" : "red");
+      pnlValue.textContent = formatUSD(profit);
+      pnlSub.textContent = "ROI: " + (roi >= 0 ? "+" : "") + roi.toFixed(1) + "% \u00B7 Costo netto: " + formatUSD(netCost);
+
+      // Scenarios
+      const scenarios = [
+        { label: "Bear", pool: 7, points: 1200 },
+        { label: "Base", pool: 15, points: 900 },
+        { label: "Bull", pool: 30, points: 700 },
+      ];
+      let html = "";
+      scenarios.forEach(s => {
+        const share = totalPoints / (s.points * 1e9);
+        const airdrop = share * s.pool * 1e6;
+        const sProfit = airdrop + yieldRecovered - inv;
+        const sRoi = (sProfit / inv) * 100;
+        const color = getRoiColor(sRoi);
+        const barWidth = Math.min(Math.abs(sRoi), 500) / 5;
+        html += `
+          <div class="roi-bar">
+            <div class="roi-header">
+              <span class="roi-label">${s.label} ($${s.pool}M pool \u00B7 ${s.points}B pts)</span>
+              <span class="roi-value" style="color:${color}">${formatUSD(sProfit)} (${sRoi >= 0 ? "+" : ""}${sRoi.toFixed(0)}%)</span>
+            </div>
+            <div class="roi-track">
+              <div class="roi-fill" style="width:${barWidth}%;background:${color}"></div>
+            </div>
+          </div>
+        `;
+      });
+      document.getElementById("scenarios-container").innerHTML = html;
+
+      const yieldNote = selectedToken === "susdai" ? " (yield recovery " + yrP + "%)" : " (USDai: no yield recovery)";
+      document.getElementById("scenario-note").textContent = "Yield recovery applicato a tutti gli scenari" + yieldNote;
+    }
+
+    // ── Manual Data Entry ──
+    function applyManualData() {
+      const ytPrice = +document.getElementById("manual-yt-price").value;
+      const days = +document.getElementById("manual-days").value;
+      const tvl = +document.getElementById("manual-tvl").value;
+      const apy = +document.getElementById("manual-apy").value / 100;
+
+      const data = {
+        ytPrice: ytPrice || 0,
+        tvl: tvl || 0,
+        daysLeft: days || 0,
+        underlyingApy: apy || 0,
+        impliedApy: 0,
+      };
+
+      // Update live display
+      applyLiveData(data);
+
+      // Update status
+      const status = document.getElementById("live-status");
+      const statusText = document.getElementById("live-status-text");
+      status.className = "live-badge";
+      statusText.textContent = "Dati manuali";
+    }
+
+    // Init
+    update();
+  </script>
+</body>
+</html>
