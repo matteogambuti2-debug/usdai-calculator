@@ -305,44 +305,31 @@
     .controls-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
-      gap: 14px 16px;
+      gap: 12px 14px;
     }
-    .slider-group { margin-bottom: 0; }
+    .slider-group {
+      margin-bottom: 0;
+      padding: 12px 12px 10px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(99,102,241,0.06) 0%, rgba(15,23,42,0.18) 100%);
+      border: 1px solid rgba(99,102,241,0.08);
+    }
     .slider-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 6px;
+      gap: 12px;
+      margin-bottom: 10px;
     }
     .slider-label { color: #94a3b8; font-size: 13px; font-weight: 600; }
-    .slider-meta { display: flex; align-items: center; gap: 8px; }
-    .slider-value { color: #f1f5f9; font-size: 14px; font-weight: 800; }
-    .slider-input {
-      width: 94px;
-      padding: 6px 8px;
-      border-radius: 10px;
-      border: 1px solid rgba(99,102,241,0.2);
-      background: rgba(15,23,42,0.92);
-      color: #f8fafc;
-      font-size: 13px;
-      font-weight: 700;
-      text-align: right;
-      font-family: inherit;
-    }
-    .slider-input:focus {
-      outline: none;
-      border-color: rgba(129,140,248,0.5);
-      box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
-    }
-    .slider-input:disabled { opacity: 0.55; cursor: not-allowed; }
-    input[type="range"] { width: 100%; accent-color: #6366f1; cursor: pointer; height: 6px; }
+    .slider-value { color: #f8fafc; font-size: 15px; font-weight: 800; }
+    input[type="range"] { width: 100%; accent-color: #6366f1; cursor: pointer; height: 5px; }
     .slider-bounds {
       display: flex;
       justify-content: space-between;
       font-size: 11px;
       color: #475569;
-      margin-top: 2px;
+      margin-top: 6px;
     }
     .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
     .stat-card {
@@ -524,7 +511,6 @@
       .controls-grid { grid-template-columns: 1fr; }
       .live-data-grid { grid-template-columns: 1fr 1fr; }
       .manual-grid { grid-template-columns: 1fr; }
-      .slider-input { width: 84px; }
       .roi-header { flex-direction: column; align-items: flex-start; gap: 4px; }
       .roi-value { text-align: left; }
     }
@@ -666,72 +652,54 @@
             <div class="slider-group">
               <div class="slider-header">
                 <span class="slider-label">YT Price</span>
-                <div class="slider-meta">
-                  <span class="slider-value" id="ytp-val">$0.0100</span>
-                  <input class="slider-input" type="number" id="ytPriceInput" min="0.001" max="0.1200" step="0.0005" value="0.0100" oninput="syncInputSlider('ytPrice'); update()">
-                </div>
+                <span class="slider-value" id="ytp-val">$0.0100</span>
               </div>
-              <input type="range" id="ytPrice" min="0.001" max="0.1200" step="0.0005" value="0.0100" oninput="syncSliderInput('ytPrice'); update()">
+              <input type="range" id="ytPrice" min="0.001" max="0.1200" step="0.0005" value="0.0100" oninput="update()">
               <div class="slider-bounds"><span>$0.0010</span><span>$0.1200</span></div>
             </div>
 
             <div class="slider-group">
               <div class="slider-header">
                 <span class="slider-label">Days Left</span>
-                <div class="slider-meta">
-                  <span class="slider-value" id="days-val">67</span>
-                  <input class="slider-input" type="number" id="daysLeftInput" min="1" max="250" step="1" value="67" oninput="syncInputSlider('daysLeft'); update()">
-                </div>
+                <span class="slider-value" id="days-val">67</span>
               </div>
-              <input type="range" id="daysLeft" min="1" max="250" step="1" value="67" oninput="syncSliderInput('daysLeft'); update()">
+              <input type="range" id="daysLeft" min="1" max="250" step="1" value="67" oninput="update()">
               <div class="slider-bounds"><span>1</span><span>250</span></div>
             </div>
 
             <div class="slider-group">
               <div class="slider-header">
                 <span class="slider-label">Underlying APY</span>
-                <div class="slider-meta">
-                  <span class="slider-value" id="uapy-val">6.58%</span>
-                  <input class="slider-input" type="number" id="underlyingApyPctInput" min="0" max="20" step="0.05" value="6.58" oninput="syncInputSlider('underlyingApyPct'); update()">
-                </div>
+                <span class="slider-value" id="uapy-val">6.58%</span>
               </div>
-              <input type="range" id="underlyingApyPct" min="0" max="20" step="0.05" value="6.58" oninput="syncSliderInput('underlyingApyPct'); update()">
+              <input type="range" id="underlyingApyPct" min="0" max="20" step="0.05" value="6.58" oninput="update()">
               <div class="slider-bounds"><span>0%</span><span>20%</span></div>
             </div>
 
             <div class="slider-group">
               <div class="slider-header">
                 <span class="slider-label">Points / YT / Day</span>
-                <div class="slider-meta">
-                  <span class="slider-value" id="ppd-val">12</span>
-                  <input class="slider-input" type="number" id="pointsPerDayInput" min="1" max="30" step="1" value="12" oninput="syncInputSlider('pointsPerDay'); update()">
-                </div>
+                <span class="slider-value" id="ppd-val">12</span>
               </div>
-              <input type="range" id="pointsPerDay" min="1" max="30" step="1" value="12" oninput="syncSliderInput('pointsPerDay'); update()">
+              <input type="range" id="pointsPerDay" min="1" max="30" step="1" value="12" oninput="update()">
               <div class="slider-bounds"><span>1</span><span>30</span></div>
             </div>
 
             <div class="slider-group">
               <div class="slider-header">
                 <span class="slider-label">Season Total Points</span>
-                <div class="slider-meta">
-                  <span class="slider-value" id="tp-val">700B</span>
-                  <input class="slider-input" type="number" id="totalPointsBInput" min="200" max="2000" step="10" value="700" oninput="syncInputSlider('totalPointsB'); update()">
-                </div>
+                <span class="slider-value" id="tp-val">700B</span>
               </div>
-              <input type="range" id="totalPointsB" min="200" max="2000" step="10" value="700" oninput="syncSliderInput('totalPointsB'); update()">
+              <input type="range" id="totalPointsB" min="200" max="2000" step="10" value="700" oninput="update()">
               <div class="slider-bounds"><span>200B</span><span>2000B</span></div>
             </div>
 
             <div class="slider-group">
               <div class="slider-header">
                 <span class="slider-label">Airdrop Pool</span>
-                <div class="slider-meta">
-                  <span class="slider-value" id="ap-val">$15M</span>
-                  <input class="slider-input" type="number" id="airdropPoolMInput" min="1" max="50" step="1" value="15" oninput="syncInputSlider('airdropPoolM'); update()">
-                </div>
+                <span class="slider-value" id="ap-val">$15M</span>
               </div>
-              <input type="range" id="airdropPoolM" min="1" max="50" step="1" value="15" oninput="syncSliderInput('airdropPoolM'); update()">
+              <input type="range" id="airdropPoolM" min="1" max="50" step="1" value="15" oninput="update()">
               <div class="slider-bounds"><span>$1M</span><span>$50M</span></div>
             </div>
           </div>
@@ -809,15 +777,6 @@
       "usdai-jun": { token: "usdai", pointsPerDay: 25, hasYield: false, fallbackLabel: "USDai Jun", defaultUnderlyingApy: 0 },
       "susdai-oct": { token: "susdai", pointsPerDay: 12, hasYield: true, fallbackLabel: "sUSDai Oct", defaultUnderlyingApy: 0.0658 },
       "susdai-jun": { token: "susdai", pointsPerDay: 12, hasYield: true, fallbackLabel: "sUSDai Jun", defaultUnderlyingApy: 0.0658 }
-    };
-
-    const CONTROL_CONFIG = {
-      ytPrice: { inputId: "ytPriceInput", decimals: 4 },
-      daysLeft: { inputId: "daysLeftInput", decimals: 0 },
-      underlyingApyPct: { inputId: "underlyingApyPctInput", decimals: 2 },
-      pointsPerDay: { inputId: "pointsPerDayInput", decimals: 0 },
-      totalPointsB: { inputId: "totalPointsBInput", decimals: 0 },
-      airdropPoolM: { inputId: "airdropPoolMInput", decimals: 0 }
     };
 
     const CORS_PROXIES = [
@@ -932,47 +891,15 @@
       input.value = formatCurrencyInputValue(value || 0);
     }
 
-    function writeControlInput(rangeId, value) {
-      const config = CONTROL_CONFIG[rangeId];
-      if (!config) return;
-      const input = document.getElementById(config.inputId);
-      if (!input) return;
-      input.value = config.decimals > 0 ? Number(value).toFixed(config.decimals) : String(Math.round(Number(value)));
-    }
-
     function setSliderValue(rangeId, value) {
       const range = document.getElementById(rangeId);
-      const config = CONTROL_CONFIG[rangeId];
-      if (!range || !config || !Number.isFinite(value)) return;
+      if (!range || !Number.isFinite(value)) return;
       const min = toNumber(range.min, value);
       const max = toNumber(range.max, value);
       const bounded = Math.min(max, Math.max(min, value));
-      range.value = config.decimals > 0 ? bounded.toFixed(config.decimals) : String(Math.round(bounded));
-      writeControlInput(rangeId, range.value);
-    }
-
-    function syncSliderInput(rangeId) {
-      const range = document.getElementById(rangeId);
-      if (!range) return;
-      writeControlInput(rangeId, range.value);
-    }
-
-    function syncInputSlider(rangeId) {
-      const range = document.getElementById(rangeId);
-      const config = CONTROL_CONFIG[rangeId];
-      if (!range || !config) return;
-      const input = document.getElementById(config.inputId);
-      if (!input) return;
-      const value = toNumber(input.value, range.value);
-      const min = toNumber(range.min, value);
-      const max = toNumber(range.max, value);
-      const bounded = Math.min(max, Math.max(min, value));
-      range.value = config.decimals > 0 ? bounded.toFixed(config.decimals) : String(Math.round(bounded));
-      writeControlInput(rangeId, range.value);
-    }
-
-    function syncAllControlInputs() {
-      Object.keys(CONTROL_CONFIG).forEach(syncSliderInput);
+      const step = String(range.step || "1");
+      const decimals = step.includes(".") ? step.split(".")[1].length : 0;
+      range.value = decimals > 0 ? bounded.toFixed(decimals) : String(Math.round(bounded));
     }
 
     async function fetchWithCors(url) {
@@ -1060,7 +987,6 @@
       const cfg = MARKET_CONFIG[selectedMarket];
       const preset = data || getSelectedMarketData();
       const underlyingRange = document.getElementById("underlyingApyPct");
-      const underlyingInput = document.getElementById("underlyingApyPctInput");
       const manualApyGroup = document.getElementById("manual-apy-group");
 
       setSliderValue("ytPrice", preset.ytPrice || 0.01);
@@ -1069,7 +995,6 @@
       setSliderValue("pointsPerDay", preset.pointsPerDay || cfg.pointsPerDay);
 
       if (underlyingRange) underlyingRange.disabled = !cfg.hasYield;
-      if (underlyingInput) underlyingInput.disabled = !cfg.hasYield;
       if (manualApyGroup) manualApyGroup.style.display = cfg.hasYield ? "" : "none";
 
       renderLiveCards(preset);
@@ -1292,7 +1217,6 @@
       statusText.textContent = "Manual data";
     }
 
-    syncAllControlInputs();
     formatInvestmentInput();
     applyPresetToControls(getSelectedMarketData());
     fetchLiveData();
