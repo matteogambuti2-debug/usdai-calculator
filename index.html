@@ -304,26 +304,23 @@
     .controls-note { font-size: 11px; color: #94a3b8; line-height: 1.45; margin-bottom: 16px; }
     .controls-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 12px 14px;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px 18px;
     }
     .slider-group {
       margin-bottom: 0;
-      padding: 12px 12px 10px;
-      border-radius: 16px;
-      background: linear-gradient(180deg, rgba(99,102,241,0.06) 0%, rgba(15,23,42,0.18) 100%);
-      border: 1px solid rgba(99,102,241,0.08);
+      padding: 0;
     }
     .slider-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 12px;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
     .slider-label { color: #94a3b8; font-size: 13px; font-weight: 600; }
-    .slider-value { color: #f8fafc; font-size: 15px; font-weight: 800; }
-    input[type="range"] { width: 100%; accent-color: #6366f1; cursor: pointer; height: 5px; }
+    .slider-value { color: #f8fafc; font-size: 14px; font-weight: 800; }
+    input[type="range"] { width: 100%; accent-color: #6366f1; cursor: pointer; height: 4px; }
     .slider-bounds {
       display: flex;
       justify-content: space-between;
@@ -499,9 +496,6 @@
     }
     .disclaimer-title { font-size: 11px; color: #eab308; font-weight: 700; margin-bottom: 4px; }
     .disclaimer-text { font-size: 11px; color: #94a3b8; line-height: 1.5; }
-    @media (max-width: 1180px) {
-      .controls-grid { grid-template-columns: 1fr 1fr; }
-    }
     @media (max-width: 960px) {
       .container { max-width: 560px; }
       .dashboard-grid { grid-template-columns: 1fr; }
