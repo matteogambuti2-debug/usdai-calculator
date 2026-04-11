@@ -42,8 +42,8 @@
     .subtitle { color: #64748b; font-size: 13px; }
     .dashboard-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-      gap: 20px;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 24px;
       align-items: start;
     }
     .dashboard-column { min-width: 0; }
@@ -63,8 +63,8 @@
       margin-bottom: 20px;
     }
     .token-btn {
-      min-height: 112px;
-      padding: 14px 16px;
+      min-height: 102px;
+      padding: 12px 14px;
       text-align: left;
       cursor: pointer;
       background: linear-gradient(180deg, rgba(15,23,42,0.84) 0%, rgba(15,23,42,0.58) 100%);
@@ -128,7 +128,7 @@
       color: #67e8f9;
     }
     .token-title {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 800;
       line-height: 1.15;
       color: #e2e8f0;
@@ -304,7 +304,7 @@
     .controls-note { font-size: 11px; color: #94a3b8; line-height: 1.45; margin-bottom: 16px; }
     .controls-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr;
       gap: 14px 16px;
     }
     .slider-group { margin-bottom: 0; }
@@ -366,11 +366,23 @@
     .stat-value.purple { color: #818cf8; }
     .stat-value.cyan { color: #22d3ee; }
     .pnl-box {
-      border-radius: 18px;
-      padding: 20px;
+      border-radius: 22px;
+      padding: 28px 24px 24px;
       text-align: center;
       margin-bottom: 20px;
       transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 22px 48px rgba(2,6,23,0.22);
+    }
+    .pnl-box::after {
+      content: "";
+      position: absolute;
+      inset: auto -60px -60px auto;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(34,197,94,0.18) 0%, rgba(34,197,94,0) 72%);
+      pointer-events: none;
     }
     .pnl-box.positive {
       background: linear-gradient(135deg, rgba(34,197,94,0.1) 0%, rgba(34,197,94,0.02) 100%);
@@ -384,19 +396,32 @@
       background: linear-gradient(135deg, rgba(148,163,184,0.08) 0%, rgba(148,163,184,0.02) 100%);
       border: 1px solid rgba(148,163,184,0.16);
     }
-    .pnl-label { color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-    .pnl-value { font-size: 36px; font-weight: 800; }
+    .pnl-label { color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 6px; }
+    .pnl-value { font-size: 54px; font-weight: 800; line-height: 1.05; }
     .pnl-value.green { color: #22c55e; }
     .pnl-value.red { color: #ef4444; }
-    .pnl-sub { color: #64748b; font-size: 13px; margin-top: 2px; }
+    .pnl-sub { color: #94a3b8; font-size: 14px; margin-top: 8px; }
+    .pnl-bonus-note {
+      margin-top: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #86efac;
+      background: rgba(34,197,94,0.08);
+      border: 1px solid rgba(34,197,94,0.16);
+    }
     .cta-panel {
       position: relative;
       overflow: hidden;
       background: linear-gradient(135deg, rgba(76,29,149,0.24) 0%, rgba(29,78,216,0.14) 100%);
       border: 1px solid rgba(129,140,248,0.24);
       border-radius: 18px;
-      padding: 18px;
-      margin-bottom: 12px;
+      padding: 22px;
+      margin-bottom: 16px;
       box-shadow: 0 12px 36px rgba(15,23,42,0.28);
     }
     .cta-panel::after {
@@ -423,7 +448,7 @@
     }
     .cta-copy {
       color: #e2e8f0;
-      font-size: 14px;
+      font-size: 15px;
       line-height: 1.55;
       margin: 0 0 14px 0;
       max-width: 520px;
@@ -431,12 +456,12 @@
     .cta-btn {
       display: block;
       width: 100%;
-      padding: 18px 0;
+      padding: 21px 0;
       background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 52%, #2563eb 100%);
       color: white;
       text-align: center;
       border-radius: 14px;
-      font-size: 17px;
+      font-size: 18px;
       font-weight: 800;
       text-decoration: none;
       letter-spacing: 0.2px;
@@ -487,6 +512,9 @@
     }
     .disclaimer-title { font-size: 11px; color: #eab308; font-weight: 700; margin-bottom: 4px; }
     .disclaimer-text { font-size: 11px; color: #94a3b8; line-height: 1.5; }
+    @media (max-width: 1180px) {
+      .controls-grid { grid-template-columns: 1fr 1fr; }
+    }
     @media (max-width: 960px) {
       .container { max-width: 560px; }
       .dashboard-grid { grid-template-columns: 1fr; }
@@ -711,6 +739,22 @@
       </div>
 
       <div class="dashboard-column">
+        <div class="pnl-box neutral" id="pnl-box">
+          <div class="pnl-label">Estimated Final PnL</div>
+          <div class="pnl-value" id="pnl-value">--</div>
+          <div class="pnl-sub" id="pnl-sub">Airdrop $0 + Yield $0 - Investment $0 | ROI 0.0%</div>
+          <div class="pnl-bonus-note">+10% creator bonus available below</div>
+        </div>
+
+        <div class="cta-panel">
+          <div class="cta-kicker">CREATOR BONUS: +10%</div>
+          <p class="cta-copy">Use my personal USD.ai creator link to unlock the exclusive +10% bonus reserved for my audience and start earning with the setup you prefer.</p>
+          <a href="https://app.usd.ai/i/aclm7" target="_blank" rel="noopener noreferrer" class="cta-btn">
+            Claim Your +10% Creator Bonus
+          </a>
+          <div class="cta-sub">Available only through my personal creator link.</div>
+        </div>
+
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-label">YT Bought</div>
@@ -736,21 +780,6 @@
             <div class="stat-label">Base Airdrop Value</div>
             <div class="stat-value purple" id="stat-airdrop">$0</div>
           </div>
-        </div>
-
-        <div class="pnl-box neutral" id="pnl-box">
-          <div class="pnl-label">Estimated Final PnL</div>
-          <div class="pnl-value" id="pnl-value">--</div>
-          <div class="pnl-sub" id="pnl-sub">Airdrop $0 + Yield $0 - Investment $0 | ROI 0.0%</div>
-        </div>
-
-        <div class="cta-panel">
-          <div class="cta-kicker">CREATOR BONUS: +10%</div>
-          <p class="cta-copy">Use my personal USD.ai creator link to unlock the exclusive +10% bonus reserved for my audience and start earning with the setup you prefer.</p>
-          <a href="https://app.usd.ai/i/aclm7" target="_blank" rel="noopener noreferrer" class="cta-btn">
-            Claim Your +10% Creator Bonus
-          </a>
-          <div class="cta-sub">Available only through my personal creator link.</div>
         </div>
 
         <div class="card">
@@ -822,6 +851,12 @@
       if (abs >= 1e6) return sign + (abs / 1e6).toFixed(2) + "M";
       if (abs >= 1e3) return sign + abs.toLocaleString("en-US", { maximumFractionDigits: 0 });
       return sign + abs.toFixed(abs >= 100 ? 0 : 2);
+    }
+
+    function formatSignedUSD(n) {
+      if (!Number.isFinite(n)) return "--";
+      const formatted = formatUSD(n);
+      return n > 0 ? "+" + formatted : formatted;
     }
 
     function formatApy(value) {
@@ -1195,7 +1230,7 @@
       const pnlSub = document.getElementById("pnl-sub");
       pnlBox.className = "pnl-box " + (pnl > 0 ? "positive" : pnl < 0 ? "negative" : "neutral");
       pnlValue.className = "pnl-value " + (pnl > 0 ? "green" : pnl < 0 ? "red" : "");
-      pnlValue.textContent = formatUSD(pnl);
+      pnlValue.textContent = formatSignedUSD(pnl);
       pnlSub.textContent = "Airdrop " + formatUSD(baseAirdropValue) + " + Yield " + formatUSD(grossYield) + " - Investment " + formatUSD(investment) + " | ROI " + (roi >= 0 ? "+" : "") + roi.toFixed(1) + "%";
 
       const scenarios = [
