@@ -302,6 +302,79 @@
     .amount-note { font-size: 11px; color: #64748b; margin-top: 10px; line-height: 1.45; }
     .scenario-title { font-size: 14px; font-weight: 800; margin-bottom: 14px; color: #e2e8f0; }
     .controls-note { font-size: 11px; color: #94a3b8; line-height: 1.45; margin-bottom: 16px; }
+    .reinvest-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(34,197,94,0.16);
+      background: linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(15,23,42,0.16) 100%);
+    }
+    .reinvest-row.hidden { display: none; }
+    .reinvest-copy { min-width: 0; }
+    .reinvest-title {
+      color: #dcfce7;
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 3px;
+      letter-spacing: 0.2px;
+    }
+    .reinvest-desc {
+      color: #94a3b8;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+    .reinvest-switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+      flex: 0 0 auto;
+    }
+    .reinvest-switch input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .reinvest-track {
+      width: 42px;
+      height: 24px;
+      border-radius: 999px;
+      background: rgba(30,41,59,0.92);
+      border: 1px solid rgba(99,102,241,0.28);
+      position: relative;
+      transition: background 0.18s ease, border-color 0.18s ease;
+      flex: 0 0 auto;
+    }
+    .reinvest-knob {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #cbd5e1;
+      box-shadow: 0 3px 10px rgba(2,6,23,0.28);
+      transition: transform 0.18s ease, background 0.18s ease;
+    }
+    .reinvest-switch input:checked + .reinvest-track {
+      background: rgba(34,197,94,0.18);
+      border-color: rgba(34,197,94,0.34);
+    }
+    .reinvest-switch input:checked + .reinvest-track .reinvest-knob {
+      transform: translateX(18px);
+      background: #22c55e;
+    }
+    .reinvest-label {
+      color: #f8fafc;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
     .controls-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -582,6 +655,7 @@
       .controls-grid { grid-template-columns: 1fr; }
       .live-data-grid { grid-template-columns: 1fr 1fr; }
       .manual-grid { grid-template-columns: 1fr; }
+      .reinvest-row { flex-direction: column; align-items: flex-start; }
       .roi-header { flex-direction: column; align-items: flex-start; gap: 4px; }
       .roi-value { text-align: left; }
     }
@@ -710,14 +784,25 @@
             <button class="quick-pick" type="button" onclick="setInvestment(10000)">$10k</button>
           </div>
           <div class="amount-note">
-            This calculator uses the selected market's live YT price and days. For sUSDai, it also estimates the gross yield through expiry on the YT notional.
+            This calculator uses the selected market's live YT price and days. For sUSDai, it also estimates yield through expiry and can optionally model daily claim-and-rebuy compounding.
           </div>
         </div>
 
         <div class="card">
           <div class="scenario-title">Controls and Presets</div>
           <div class="controls-note">
-            The buttons above load live Pendle presets. After clicking, you can still adjust price, days, APY, points and supply to build any scenario. Implied yield stays tied to the selected live market.
+            The buttons above load live Pendle presets. After clicking, you can still adjust price, days, APY, points and supply to build any scenario. Implied yield stays tied to the selected live market, and sUSDai can optionally recycle claimed yield into more YT.
+          </div>
+          <div class="reinvest-row hidden" id="reinvest-row">
+            <div class="reinvest-copy">
+              <div class="reinvest-title">sUSDai Advanced</div>
+              <div class="reinvest-desc" id="reinvest-desc">Recycle each daily SY claim into more sUSDai YT using the same implied-yield curve.</div>
+            </div>
+            <label class="reinvest-switch">
+              <input type="checkbox" id="reinvestYield" onchange="update()">
+              <span class="reinvest-track"><span class="reinvest-knob"></span></span>
+              <span class="reinvest-label">Reinvest Yield</span>
+            </label>
           </div>
           <div class="controls-grid">
             <div class="slider-group">
@@ -796,11 +881,11 @@
 
         <div class="stats-grid">
           <div class="stat-card">
-            <div class="stat-label">YT Bought</div>
+            <div class="stat-label" id="stat-yt-label">YT Bought</div>
             <div class="stat-value" id="stat-yt">0</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Points / Day</div>
+            <div class="stat-label" id="stat-daily-label">Points / Day</div>
             <div class="stat-value" id="stat-daily">0</div>
           </div>
           <div class="stat-card">
@@ -812,7 +897,7 @@
             <div class="stat-value" id="stat-per-million">$0</div>
           </div>
           <div class="stat-card large">
-            <div class="stat-label">Estimated Gross Yield</div>
+            <div class="stat-label" id="stat-yield-label">Estimated Gross Yield</div>
             <div class="stat-value cyan" id="stat-yield">$0</div>
           </div>
           <div class="stat-card large">
@@ -930,13 +1015,104 @@
     function calculateYtPrice(impliedApy, daysLeft, underlyingPrice) {
       if (!(impliedApy > 0) || !(daysLeft > 0) || !(underlyingPrice > 0)) return 0;
       const yearsToExpiry = daysLeft / 365;
-      const ptPrice = underlyingPrice / Math.pow(1 + impliedApy, yearsToExpiry);
-      return Math.max(0, underlyingPrice - ptPrice);
+      const ptExchangeRate = Math.pow(1 + impliedApy, yearsToExpiry);
+      return Math.max(0, underlyingPrice * (1 - (1 / ptExchangeRate)));
     }
 
     function calculateEarnPct(underlyingApy, impliedApy, hasYield) {
       if (!hasYield || !(underlyingApy > 0) || !(impliedApy > 0)) return null;
       return ((underlyingApy / impliedApy) - 1) * 100;
+    }
+
+    function getDailyRateFromApy(apy) {
+      if (!(apy > 0)) return 0;
+      return Math.pow(1 + apy, 1 / 365) - 1;
+    }
+
+    function isReinvestEnabled() {
+      const toggle = document.getElementById("reinvestYield");
+      return !!toggle && toggle.checked;
+    }
+
+    function updateReinvestUI() {
+      const cfg = MARKET_CONFIG[selectedMarket];
+      const row = document.getElementById("reinvest-row");
+      const desc = document.getElementById("reinvest-desc");
+      if (!row || !desc) return;
+
+      const visible = !!cfg.hasYield;
+      row.classList.toggle("hidden", !visible);
+
+      if (!visible) return;
+
+      desc.textContent = isReinvestEnabled()
+        ? "Daily compounding is on: each claimed SY amount is recycled into more sUSDai YT using the remaining implied-yield curve."
+        : "Optional mode: recycle each daily SY claim into more sUSDai YT to model compounding points and yield.";
+    }
+
+    function simulateStrategy(investment, assumptions, cfg) {
+      const initialYt = assumptions.ytPrice > 0 ? investment / assumptions.ytPrice : 0;
+      const totalDays = Math.max(0, Math.floor(assumptions.daysLeft));
+      const dailyUnderlyingRate = cfg.hasYield ? getDailyRateFromApy(assumptions.underlyingApy) : 0;
+      const reinvest = cfg.hasYield && isReinvestEnabled() && dailyUnderlyingRate > 0;
+      const curveStartPrice = calculateYtPrice(assumptions.impliedApy, totalDays, 1);
+      const priceScale = curveStartPrice > 0 && assumptions.ytPrice > 0 ? assumptions.ytPrice / curveStartPrice : 1;
+      const cohorts = initialYt > 0 ? [{ ytAmount: initialYt, yieldBase: 1 }] : [];
+
+      let totalPoints = 0;
+      let totalClaimedYield = 0;
+      let reinvestedYield = 0;
+      let cashYield = 0;
+      let firstDayPoints = 0;
+      let lastDayPoints = 0;
+
+      for (let dayIndex = 0; dayIndex < totalDays; dayIndex++) {
+        const currentYt = cohorts.reduce((sum, cohort) => sum + cohort.ytAmount, 0);
+        const todayPoints = currentYt * assumptions.pointsPerDay;
+        totalPoints += todayPoints;
+        if (dayIndex === 0) firstDayPoints = todayPoints;
+        lastDayPoints = todayPoints;
+
+        let todayClaim = 0;
+        if (dailyUnderlyingRate > 0) {
+          cohorts.forEach((cohort) => {
+            const claim = cohort.ytAmount * cohort.yieldBase * dailyUnderlyingRate;
+            todayClaim += claim;
+            cohort.yieldBase *= (1 + dailyUnderlyingRate);
+          });
+        }
+
+        totalClaimedYield += todayClaim;
+
+        const remainingDays = totalDays - dayIndex - 1;
+        if (reinvest && todayClaim > 0 && remainingDays > 0) {
+          const modeledRebuyPrice = calculateYtPrice(assumptions.impliedApy, remainingDays, 1) * priceScale;
+          if (modeledRebuyPrice > 0) {
+            cohorts.push({ ytAmount: todayClaim / modeledRebuyPrice, yieldBase: 1 });
+            reinvestedYield += todayClaim;
+          } else {
+            cashYield += todayClaim;
+          }
+        } else {
+          cashYield += todayClaim;
+        }
+      }
+
+      const finalYtHeld = cohorts.reduce((sum, cohort) => sum + cohort.ytAmount, 0);
+      const averageDailyPoints = totalDays > 0 ? totalPoints / totalDays : 0;
+
+      return {
+        reinvest,
+        initialYt,
+        finalYtHeld,
+        firstDayPoints,
+        lastDayPoints,
+        averageDailyPoints,
+        totalPoints,
+        totalClaimedYield,
+        reinvestedYield,
+        cashYield
+      };
     }
 
     function parseCurrencyValue(value) {
@@ -1078,6 +1254,7 @@
       if (underlyingRange) underlyingRange.disabled = !cfg.hasYield;
       if (manualApyGroup) manualApyGroup.style.display = cfg.hasYield ? "" : "none";
 
+      updateReinvestUI();
       renderLiveCards(preset);
       update();
     }
@@ -1093,6 +1270,7 @@
       document.querySelectorAll(".token-btn").forEach((btn) => {
         btn.classList.toggle("active", btn.dataset.market === marketId);
       });
+      updateReinvestUI();
       applyPresetToControls(getSelectedMarketData());
       if (!liveData[marketId] && !isFetching) {
         fetchLiveData();
@@ -1197,8 +1375,10 @@
       const investment = parseCurrencyValue(document.getElementById("investment").value);
       const totalPointsB = toNumber(document.getElementById("totalPointsB").value, 0);
       const airdropPoolM = toNumber(document.getElementById("airdropPoolM").value, 0);
+      const strategy = simulateStrategy(investment, assumptions, cfg);
 
       document.querySelectorAll('input[type="range"]').forEach(updateRangeVisual);
+      updateReinvestUI();
 
       document.getElementById("ytp-val").textContent = "$" + assumptions.ytPrice.toFixed(4);
       document.getElementById("days-val").textContent = assumptions.daysLeft.toFixed(0);
@@ -1207,21 +1387,20 @@
       document.getElementById("tp-val").textContent = totalPointsB.toFixed(0) + "B";
       document.getElementById("ap-val").textContent = "$" + airdropPoolM.toFixed(0) + "M";
 
-      const ytAmount = assumptions.ytPrice > 0 ? investment / assumptions.ytPrice : 0;
-      const dailyPoints = ytAmount * assumptions.pointsPerDay;
-      const totalPoints = dailyPoints * assumptions.daysLeft;
-      const sharePct = totalPointsB > 0 ? (totalPoints / (totalPointsB * 1e9)) * 100 : 0;
+      const sharePct = totalPointsB > 0 ? (strategy.totalPoints / (totalPointsB * 1e9)) * 100 : 0;
       const baseAirdropValue = (sharePct / 100) * airdropPoolM * 1e6;
-      const grossYield = cfg.hasYield ? ytAmount * assumptions.underlyingApy * (assumptions.daysLeft / 365) : 0;
-      const pnl = baseAirdropValue + grossYield - investment;
+      const pnl = baseAirdropValue + strategy.cashYield - investment;
       const roi = investment > 0 ? (pnl / investment) * 100 : 0;
       const dollarsPerMillionPoints = totalPointsB > 0 ? (airdropPoolM * 1000) / totalPointsB : 0;
 
-      document.getElementById("stat-yt").textContent = formatNumber(ytAmount);
-      document.getElementById("stat-daily").textContent = formatNumber(dailyPoints);
-      document.getElementById("stat-total").textContent = formatNumber(totalPoints);
+      document.getElementById("stat-yt-label").textContent = strategy.reinvest ? "Final YT Held" : "YT Bought";
+      document.getElementById("stat-daily-label").textContent = strategy.reinvest ? "Avg Points / Day" : "Points / Day";
+      document.getElementById("stat-yield-label").textContent = strategy.reinvest ? "Yield Generated" : "Estimated Gross Yield";
+      document.getElementById("stat-yt").textContent = formatNumber(strategy.reinvest ? strategy.finalYtHeld : strategy.initialYt);
+      document.getElementById("stat-daily").textContent = formatNumber(strategy.reinvest ? strategy.averageDailyPoints : strategy.firstDayPoints);
+      document.getElementById("stat-total").textContent = formatNumber(strategy.totalPoints);
       document.getElementById("stat-per-million").textContent = formatUSD(dollarsPerMillionPoints);
-      document.getElementById("stat-yield").textContent = formatUSD(grossYield);
+      document.getElementById("stat-yield").textContent = formatUSD(strategy.reinvest ? strategy.totalClaimedYield : strategy.cashYield);
       document.getElementById("stat-airdrop").textContent = formatUSD(baseAirdropValue);
 
       renderLiveCards({
@@ -1239,7 +1418,9 @@
       pnlBox.className = "pnl-box " + (pnl > 0 ? "positive" : pnl < 0 ? "negative" : "neutral");
       pnlValue.className = "pnl-value " + (pnl > 0 ? "green" : pnl < 0 ? "red" : "");
       pnlValue.textContent = formatSignedUSD(pnl);
-      pnlSub.textContent = "Airdrop " + formatUSD(baseAirdropValue) + " + Yield " + formatUSD(grossYield) + " - Investment " + formatUSD(investment) + " | ROI " + (roi >= 0 ? "+" : "") + roi.toFixed(1) + "%";
+      pnlSub.textContent = strategy.reinvest
+        ? "Airdrop " + formatUSD(baseAirdropValue) + " + Final cash yield " + formatUSD(strategy.cashYield) + " - Investment " + formatUSD(investment) + " | ROI " + (roi >= 0 ? "+" : "") + roi.toFixed(1) + "%"
+        : "Airdrop " + formatUSD(baseAirdropValue) + " + Yield " + formatUSD(strategy.cashYield) + " - Investment " + formatUSD(investment) + " | ROI " + (roi >= 0 ? "+" : "") + roi.toFixed(1) + "%";
 
       const scenarios = [
         { label: "Bear", pool: 7, points: 1200 },
@@ -1249,9 +1430,9 @@
 
       let html = "";
       scenarios.forEach((scenario) => {
-        const share = totalPoints / (scenario.points * 1e9);
+        const share = strategy.totalPoints / (scenario.points * 1e9);
         const airdrop = share * scenario.pool * 1e6;
-        const scenarioPnl = airdrop + grossYield - investment;
+        const scenarioPnl = airdrop + strategy.cashYield - investment;
         const scenarioRoi = investment > 0 ? (scenarioPnl / investment) * 100 : 0;
         const color = getRoiColor(scenarioRoi);
         const barWidth = Math.min(Math.abs(scenarioRoi), 500) / 5;
@@ -1270,8 +1451,9 @@
       });
       document.getElementById("scenarios-container").innerHTML = html;
 
-      document.getElementById("scenario-note").textContent =
-        "With these assumptions, 1M points are worth about " + formatUSD(dollarsPerMillionPoints) + ". In your scenario you generate " + formatNumber(totalPoints) + " total points and about " + formatUSD(baseAirdropValue) + " in base airdrop value. The buttons above are only starting presets.";
+      document.getElementById("scenario-note").textContent = strategy.reinvest
+        ? "With these assumptions, 1M points are worth about " + formatUSD(dollarsPerMillionPoints) + ". Daily reinvest is ON, so claimed SY is recycled into more sUSDai YT using the remaining implied-yield curve. You generate " + formatNumber(strategy.totalPoints) + " total points and about " + formatUSD(baseAirdropValue) + " in base airdrop value."
+        : "With these assumptions, 1M points are worth about " + formatUSD(dollarsPerMillionPoints) + ". In your scenario you generate " + formatNumber(strategy.totalPoints) + " total points and about " + formatUSD(baseAirdropValue) + " in base airdrop value. The buttons above are only starting presets.";
     }
 
     function applyManualData() {
