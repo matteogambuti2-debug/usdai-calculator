@@ -305,7 +305,7 @@
     .controls-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 18px 18px;
+      gap: 20px 18px;
     }
     .slider-group {
       margin-bottom: 0;
@@ -316,11 +316,68 @@
       justify-content: space-between;
       align-items: center;
       gap: 12px;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
     .slider-label { color: #94a3b8; font-size: 13px; font-weight: 600; }
-    .slider-value { color: #f8fafc; font-size: 14px; font-weight: 800; }
-    input[type="range"] { width: 100%; accent-color: #6366f1; cursor: pointer; height: 4px; }
+    .slider-value { color: #f8fafc; font-size: 15px; font-weight: 800; }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      display: block;
+      height: 18px;
+      margin: 0;
+      background: transparent;
+      cursor: pointer;
+      --range-progress: 50%;
+      --range-fill: #6366f1;
+      --range-empty: rgba(226,232,240,0.96);
+    }
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 5px;
+      border-radius: 999px;
+      background: linear-gradient(90deg,
+        var(--range-fill) 0%,
+        var(--range-fill) var(--range-progress),
+        var(--range-empty) var(--range-progress),
+        var(--range-empty) 100%);
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #6366f1;
+      border: 2px solid #e2e8f0;
+      box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+      margin-top: -5.5px;
+    }
+    input[type="range"]::-moz-range-track {
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(226,232,240,0.96);
+    }
+    input[type="range"]::-moz-range-progress {
+      height: 5px;
+      border-radius: 999px;
+      background: #6366f1;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #6366f1;
+      border: 2px solid #e2e8f0;
+      box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+    }
+    input[type="range"]:focus {
+      outline: none;
+    }
+    input[type="range"]:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
     .slider-bounds {
       display: flex;
       justify-content: space-between;
@@ -394,7 +451,9 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 6px 12px;
+      align-self: center;
+      width: fit-content;
+      padding: 5px 10px;
       border-radius: 999px;
       font-size: 11px;
       font-weight: 700;
@@ -428,7 +487,9 @@
     }
     .cta-kicker {
       display: inline-block;
-      padding: 4px 10px;
+      align-self: flex-start;
+      width: fit-content;
+      padding: 4px 9px;
       border-radius: 999px;
       background: rgba(34,197,94,0.12);
       border: 1px solid rgba(34,197,94,0.25);
@@ -904,6 +965,16 @@
       const step = String(range.step || "1");
       const decimals = step.includes(".") ? step.split(".")[1].length : 0;
       range.value = decimals > 0 ? bounded.toFixed(decimals) : String(Math.round(bounded));
+      updateRangeVisual(range);
+    }
+
+    function updateRangeVisual(range) {
+      if (!range) return;
+      const min = toNumber(range.min, 0);
+      const max = toNumber(range.max, 100);
+      const value = toNumber(range.value, min);
+      const pct = max > min ? ((value - min) / (max - min)) * 100 : 0;
+      range.style.setProperty("--range-progress", Math.min(100, Math.max(0, pct)) + "%");
     }
 
     async function fetchWithCors(url) {
@@ -1121,6 +1192,8 @@
       const totalPointsB = toNumber(document.getElementById("totalPointsB").value, 0);
       const airdropPoolM = toNumber(document.getElementById("airdropPoolM").value, 0);
 
+      document.querySelectorAll('input[type="range"]').forEach(updateRangeVisual);
+
       document.getElementById("ytp-val").textContent = "$" + assumptions.ytPrice.toFixed(4);
       document.getElementById("days-val").textContent = assumptions.daysLeft.toFixed(0);
       document.getElementById("uapy-val").textContent = assumptions.underlyingApy > 0 ? formatApy(assumptions.underlyingApy) : "0.00%";
@@ -1222,6 +1295,7 @@
     }
 
     formatInvestmentInput();
+    document.querySelectorAll('input[type="range"]').forEach(updateRangeVisual);
     applyPresetToControls(getSelectedMarketData());
     fetchLiveData();
   </script>
