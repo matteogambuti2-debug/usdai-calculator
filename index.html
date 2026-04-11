@@ -14,7 +14,7 @@
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       padding: 24px 16px;
     }
-    .container { max-width: 1180px; margin: 0 auto; }
+    .container { max-width: 1340px; margin: 0 auto; }
     .dashboard-grid {
       display: grid;
       grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
@@ -195,17 +195,55 @@
     .disclaimer-text { font-size: 11px; color: #94a3b8; line-height: 1.5; }
 
     /* CTA */
+    .cta-panel {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, rgba(99,102,241,0.18) 0%, rgba(14,165,233,0.08) 100%);
+      border: 1px solid rgba(129,140,248,0.24);
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 12px;
+      box-shadow: 0 12px 36px rgba(15,23,42,0.28);
+    }
+    .cta-panel::after {
+      content: "";
+      position: absolute;
+      right: -48px;
+      bottom: -48px;
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, rgba(34,197,94,0.22) 0%, rgba(34,197,94,0) 72%);
+      pointer-events: none;
+    }
+    .cta-kicker {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(34,197,94,0.12);
+      border: 1px solid rgba(34,197,94,0.25);
+      color: #86efac;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      margin-bottom: 10px;
+    }
+    .cta-copy {
+      color: #cbd5e1;
+      font-size: 13px;
+      line-height: 1.5;
+      margin: 0 0 14px 0;
+    }
     .cta-btn {
-      display: block; width: 100%; padding: 16px 0;
+      display: block; width: 100%; padding: 18px 0;
       background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
       color: white; text-align: center; border-radius: 12px; font-size: 16px; font-weight: 700;
       text-decoration: none; letter-spacing: 0.3px;
-      box-shadow: 0 4px 20px rgba(99,102,241,0.3);
+      box-shadow: 0 10px 28px rgba(99,102,241,0.38);
       margin-bottom: 8px; cursor: pointer; border: none;
       transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
-    .cta-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(99,102,241,0.4); }
-    .cta-sub { text-align: center; font-size: 11px; color: #475569; margin-bottom: 24px; }
+    .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(99,102,241,0.48); }
+    .cta-sub { text-align: center; font-size: 12px; color: #94a3b8; margin-bottom: 0; }
 
     @media (max-width: 960px) {
       .container { max-width: 560px; }
@@ -224,7 +262,7 @@
     <div class="header">
       <div class="badge">YIELD TOKEN CALCULATOR</div>
       <h1>USD.ai Airdrop Simulator</h1>
-      <p class="subtitle">Calcola il tuo potenziale rendimento. Muovi gli slider per esplorare gli scenari.</p>
+      <p class="subtitle">Pick a live market, then move the sliders to build your own scenario.</p>
     </div>
 
     <div class="dashboard-grid">
@@ -234,22 +272,22 @@
     <div class="token-toggle" id="market-buttons">
       <button class="token-btn active" data-market="usdai-oct" onclick="selectMarket('usdai-oct')">
         YT USDai
-        <span class="token-sub">Solo punti, no yield</span>
+        <span class="token-sub">Points only, no yield</span>
         <span class="token-days" id="btn-days-usdai-oct">Oct 2026 · 186d</span>
       </button>
       <button class="token-btn" data-market="susdai-oct" onclick="selectMarket('susdai-oct')">
         YT sUSDai
-        <span class="token-sub">Punti + Yield Recovery</span>
+        <span class="token-sub">Points + Yield Recovery</span>
         <span class="token-days" id="btn-days-susdai-oct">Oct 2026 · 186d</span>
       </button>
       <button class="token-btn" data-market="usdai-jun" onclick="selectMarket('usdai-jun')">
         YT USDai
-        <span class="token-sub">Solo punti, no yield</span>
+        <span class="token-sub">Points only, no yield</span>
         <span class="token-days" id="btn-days-usdai-jun">Jun 2026 · 67d</span>
       </button>
       <button class="token-btn" data-market="susdai-jun" onclick="selectMarket('susdai-jun')">
         YT sUSDai
-        <span class="token-sub">Punti + Yield Recovery</span>
+        <span class="token-sub">Points + Yield Recovery</span>
         <span class="token-days" id="btn-days-susdai-jun">Jun 2026 · 67d</span>
       </button>
     </div>
@@ -259,19 +297,19 @@
       <div class="live-row">
         <div class="live-badge stale" id="live-status">
           <div class="live-dot"></div>
-          <span id="live-status-text">Non connesso</span>
+          <span id="live-status-text">Not connected</span>
         </div>
         <button class="fetch-btn" id="fetch-btn" onclick="fetchLiveData()">
-          Carica dati live
+          Load live data
         </button>
       </div>
       <div class="live-data-grid">
         <div class="live-card">
-          <div class="live-card-label">Prezzo YT</div>
+          <div class="live-card-label">YT Price</div>
           <div class="live-card-value loading" id="live-yt-price">--</div>
         </div>
         <div class="live-card">
-          <div class="live-card-label">Giorni rimasti</div>
+          <div class="live-card-label">Days Left</div>
           <div class="live-card-value loading" id="live-days">--</div>
         </div>
         <div class="live-card">
@@ -287,27 +325,27 @@
           <div class="live-card-value loading" id="live-edge">--</div>
         </div>
         <div class="live-card">
-          <div class="live-card-label">Punti / YT / Giorno</div>
+          <div class="live-card-label">Points / YT / Day</div>
           <div class="live-card-value loading" id="live-ppd">--</div>
         </div>
       </div>
       <div class="live-footnote" id="live-footnote">
-        Carica i dati live di Pendle per vedere prezzo, giorni, yield e spread del market selezionato.
+        Load live Pendle data to see price, days, yield and spread for the selected market.
       </div>
 
       <!-- Manual fallback -->
       <div class="manual-fallback" id="manual-fallback">
         <div class="manual-note">
-          Il fetch automatico non funziona in questo ambiente. Inserisci i dati manualmente da
+          Automatic fetch is not working in this environment. Enter the values manually from
           <a href="https://app.pendle.finance" target="_blank" style="color:#818cf8">app.pendle.finance</a>:
         </div>
         <div class="manual-grid">
           <div class="manual-input-group">
-            <label>Prezzo YT ($)</label>
+            <label>YT Price ($)</label>
             <input type="number" id="manual-yt-price" step="0.0001" placeholder="es. 0.0135">
           </div>
           <div class="manual-input-group">
-            <label>Giorni alla scadenza</label>
+            <label>Days to Expiry</label>
             <input type="number" id="manual-days" step="1" placeholder="es. 67">
           </div>
           <div class="manual-input-group" id="manual-apy-group">
@@ -319,12 +357,12 @@
             <input type="number" id="manual-implied" step="0.1" placeholder="es. 8.1">
           </div>
         </div>
-        <button class="manual-apply-btn" onclick="applyManualData()">Applica dati manuali</button>
+        <button class="manual-apply-btn" onclick="applyManualData()">Apply manual data</button>
       </div>
     </div>
 
     <div class="card">
-      <div class="amount-label">Quanto vuoi investire</div>
+      <div class="amount-label">How much do you want to invest</div>
       <input class="amount-input" type="number" id="investment" min="100" step="100" value="1000" oninput="update()">
       <div class="quick-picks">
         <button class="quick-pick" type="button" onclick="setInvestment(500)">$500</button>
@@ -334,19 +372,19 @@
         <button class="quick-pick" type="button" onclick="setInvestment(10000)">$10k</button>
       </div>
       <div class="amount-note">
-        Il calcolo usa prezzo YT e giorni live del market selezionato. Per sUSDai stimiamo anche il rendimento lordo fino a scadenza sul notional YT.
+        This calculator uses the selected market's live YT price and days. For sUSDai, it also estimates the gross yield through expiry on the YT notional.
       </div>
     </div>
 
     <div class="card">
-      <div class="scenario-title">Controlli & Preset</div>
+      <div class="scenario-title">Controls & Presets</div>
       <div class="controls-note">
-        I bottoni sopra caricano un preset live di Pendle. Dopo il click puoi comunque cambiare prezzo, giorni, APY e punti per costruire qualsiasi scenario.
+        The buttons above load live Pendle presets. After clicking, you can still adjust price, days, APY, points and supply to build any scenario. Implied yield stays tied to the selected live market.
       </div>
       <div class="controls-grid">
         <div class="slider-group">
           <div class="slider-header">
-            <span class="slider-label">Prezzo YT</span>
+            <span class="slider-label">YT Price</span>
             <span class="slider-value" id="ytp-val">$0.0100</span>
           </div>
           <input type="range" id="ytPrice" min="0.001" max="0.1200" step="0.0005" value="0.0100" oninput="update()">
@@ -354,7 +392,7 @@
         </div>
         <div class="slider-group">
           <div class="slider-header">
-            <span class="slider-label">Giorni rimanenti</span>
+            <span class="slider-label">Days Left</span>
             <span class="slider-value" id="days-val">67</span>
           </div>
           <input type="range" id="daysLeft" min="1" max="250" step="1" value="67" oninput="update()">
@@ -370,15 +408,7 @@
         </div>
         <div class="slider-group">
           <div class="slider-header">
-            <span class="slider-label">Implied Yield</span>
-            <span class="slider-value" id="iapy-val">8.10%</span>
-          </div>
-          <input type="range" id="impliedApyPct" min="0" max="25" step="0.05" value="8.10" oninput="update()">
-          <div class="slider-bounds"><span>0%</span><span>25%</span></div>
-        </div>
-        <div class="slider-group">
-          <div class="slider-header">
-            <span class="slider-label">Punti / YT / Giorno</span>
+            <span class="slider-label">Points / YT / Day</span>
             <span class="slider-value" id="ppd-val">12</span>
           </div>
           <input type="range" id="pointsPerDay" min="1" max="30" step="1" value="12" oninput="update()">
@@ -386,7 +416,7 @@
         </div>
         <div class="slider-group">
           <div class="slider-header">
-            <span class="slider-label">Punti totali season</span>
+            <span class="slider-label">Season Total Points</span>
             <span class="slider-value" id="tp-val">700B</span>
           </div>
           <input type="range" id="totalPointsB" min="200" max="2000" step="10" value="700" oninput="update()">
@@ -413,37 +443,47 @@
         <div class="stat-value" id="stat-yt">74.1K</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Punti / Giorno</div>
+        <div class="stat-label">Points / Day</div>
         <div class="stat-value" id="stat-daily">888.9K</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Punti Totali</div>
+        <div class="stat-label">Total Points</div>
         <div class="stat-value" id="stat-total">59.56M</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Punti / $1M</div>
+        <div class="stat-label">Value / 1M Points</div>
         <div class="stat-value" id="stat-per-million">0</div>
       </div>
       <div class="stat-card large">
-        <div class="stat-label">Yield Lordo Stimato</div>
+        <div class="stat-label">Estimated Gross Yield</div>
         <div class="stat-value cyan" id="stat-yield">$0</div>
       </div>
       <div class="stat-card large">
-        <div class="stat-label">Valore Airdrop Base</div>
+        <div class="stat-label">Base Airdrop Value</div>
         <div class="stat-value purple" id="stat-airdrop">$1276</div>
       </div>
     </div>
 
     <!-- P&L Box -->
     <div class="pnl-box neutral" id="pnl-box">
-      <div class="pnl-label">PNL Finale Stimato</div>
+      <div class="pnl-label">Estimated Final PnL</div>
       <div class="pnl-value" id="pnl-value">--</div>
-      <div class="pnl-sub" id="pnl-sub">ROI: +27.6% · Costo netto: $1000</div>
+      <div class="pnl-sub" id="pnl-sub">Airdrop $0 + Yield $0 - Investment $0 | ROI 0.0%</div>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-panel">
+      <div class="cta-kicker">REFERRAL BONUS ACTIVE</div>
+      <p class="cta-copy">Open USD.ai through my link, unlock the referral bonus, and use this dashboard to compare the most interesting YT markets in seconds.</p>
+      <a href="https://app.usd.ai/i/aclm7" target="_blank" rel="noopener noreferrer" class="cta-btn">
+        Start with USD.ai + Bonus
+      </a>
+      <div class="cta-sub">Referral bonus for you and referral bonus for me.</div>
     </div>
 
     <!-- Scenarios -->
     <div class="card">
-      <div class="scenario-title">Scenari a confronto</div>
+      <div class="scenario-title">Scenario Comparison</div>
       <div id="scenarios-container"></div>
       <div class="scenario-note" id="scenario-note"></div>
     </div>
@@ -451,14 +491,9 @@
     <!-- Disclaimer -->
     <div class="disclaimer">
       <div class="disclaimer-title">DISCLAIMER</div>
-      <div class="disclaimer-text">Questo simulatore ha scopo puramente educativo. I risultati sono stime basate sugli input forniti. L'airdrop non &egrave; garantito e i parametri possono cambiare. Non &egrave; un consiglio finanziario. DYOR.</div>
+      <div class="disclaimer-text">This simulator is for educational purposes only. Results are estimates based on the inputs provided. The airdrop is not guaranteed and the parameters may change. This is not financial advice. DYOR.</div>
     </div>
 
-    <!-- CTA -->
-    <a href="https://app.usd.ai/i/aclm7" target="_blank" rel="noopener noreferrer" class="cta-btn">
-      Prova USD.ai &rarr;
-    </a>
-    <div class="cta-sub">10% referral bonus per chi si registra da qui</div>
       </div>
     </div>
   </div>
@@ -580,9 +615,9 @@
       const statusText = document.getElementById("live-status-text");
 
       btn.disabled = true;
-      btn.textContent = "Caricamento...";
+      btn.textContent = "Loading...";
       status.className = "live-badge stale";
-      statusText.textContent = "Connessione a Pendle...";
+      statusText.textContent = "Connecting to Pendle...";
 
       try {
         liveData = {};
@@ -695,19 +730,19 @@
           document.getElementById("manual-fallback").classList.remove("show");
         } else {
           status.className = "live-badge error";
-          statusText.textContent = "Mercato non trovato";
+          statusText.textContent = "Market not found";
           document.getElementById("manual-fallback").classList.add("show");
         }
 
       } catch (err) {
         console.error("[Pendle] Fetch error:", err);
         status.className = "live-badge error";
-        statusText.textContent = "Connessione fallita";
+        statusText.textContent = "Connection failed";
         document.getElementById("manual-fallback").classList.add("show");
       }
 
       btn.disabled = false;
-      btn.textContent = "Aggiorna dati";
+      btn.textContent = "Refresh data";
       isFetching = false;
     }
 
@@ -849,7 +884,7 @@
       pnlBox.className = "pnl-box " + (profit >= 0 ? "positive" : "negative");
       pnlValue.className = "pnl-value " + (profit >= 0 ? "green" : "red");
       pnlValue.textContent = formatUSD(profit);
-      pnlSub.textContent = "ROI: " + (roi >= 0 ? "+" : "") + roi.toFixed(1) + "% \u00B7 Costo netto: " + formatUSD(netCost);
+      pnlSub.textContent = "ROI: " + (roi >= 0 ? "+" : "") + roi.toFixed(1) + "% · Net cost: " + formatUSD(netCost);
 
       // Scenarios
       const scenarios = [
@@ -880,7 +915,7 @@
       document.getElementById("scenarios-container").innerHTML = html;
 
       const yieldNote = MARKET_CONFIG[selectedMarket].hasYield ? " (yield recovery " + yrP + "%)" : " (USDai: no yield recovery)";
-      document.getElementById("scenario-note").textContent = "Yield recovery applicato a tutti gli scenari" + yieldNote;
+      document.getElementById("scenario-note").textContent = "Yield recovery applied across all scenarios" + yieldNote;
     }
 
     // ── Manual Data Entry ──
@@ -906,7 +941,7 @@
       const status = document.getElementById("live-status");
       const statusText = document.getElementById("live-status-text");
       status.className = "live-badge";
-      statusText.textContent = "Dati manuali";
+      statusText.textContent = "Manual data";
     }
 
     // Init — set default points and auto-fetch
@@ -1019,10 +1054,11 @@
 
     function getCurrentAssumptions() {
       const cfg = MARKET_CONFIG[selectedMarket];
+      const preset = getSelectedMarketData();
       const ytPrice = toNumber(document.getElementById("ytPrice").value, 0);
       const daysLeft = toNumber(document.getElementById("daysLeft").value, 0);
       const underlyingApy = cfg.hasYield ? toNumber(document.getElementById("underlyingApyPct").value, 0) / 100 : 0;
-      const impliedApy = toNumber(document.getElementById("impliedApyPct").value, 0) / 100;
+      const impliedApy = toNumber(preset.impliedApy, 0);
       const pointsPerDay = toNumber(document.getElementById("pointsPerDay").value, cfg.pointsPerDay);
       return {
         ytPrice,
@@ -1051,9 +1087,9 @@
 
       if (cfg.hasYield) {
         const presetPct = ((cfg.defaultUnderlyingApy || 0) * 100).toFixed(2);
-        footnote.textContent = "Per sUSDai usiamo un preset APY modificabile di " + presetPct + "%, piu' vicino al dashboard USD.ai. I dati Pendle restano il preset iniziale per prezzo, giorni e implied yield.";
+        footnote.textContent = "For sUSDai we use an editable APY preset of " + presetPct + "%. Pendle supplies the starting preset for YT price, days and implied yield.";
       } else {
-        footnote.textContent = "USDai non ha native yield: i bottoni caricano il market live, poi puoi comunque cambiare prezzo, giorni e punti per fare scenari diversi.";
+        footnote.textContent = "USDai has no native yield: the buttons load the live market, then you can still adjust price, days and points to explore different scenarios.";
       }
     }
 
@@ -1064,7 +1100,6 @@
       setSliderValue("ytPrice", preset.ytPrice || 0.01, 4);
       setSliderValue("daysLeft", preset.daysLeft || 67, 0);
       setSliderValue("underlyingApyPct", cfg.hasYield ? (cfg.defaultUnderlyingApy * 100) : 0, 2);
-      setSliderValue("impliedApyPct", (preset.impliedApy || 0) * 100, 2);
       setSliderValue("pointsPerDay", preset.pointsPerDay || cfg.pointsPerDay, 0);
       if (underlyingSlider) underlyingSlider.disabled = !cfg.hasYield;
       renderLiveCards(preset);
@@ -1131,9 +1166,9 @@
       const statusText = document.getElementById("live-status-text");
 
       btn.disabled = true;
-      btn.textContent = "Caricamento...";
+      btn.textContent = "Loading...";
       status.className = "live-badge stale";
-      statusText.textContent = "Connessione a Pendle...";
+      statusText.textContent = "Connecting to Pendle...";
 
       try {
         const res = await fetchWithCors(API_BASE + "/v1/" + CHAIN_ID + "/markets/active");
@@ -1159,21 +1194,21 @@
 
         if (getSelectedMarketData().daysLeft > 0) {
           status.className = "live-badge";
-          statusText.textContent = "Preset live da Pendle";
+          statusText.textContent = "Live preset from Pendle";
           document.getElementById("manual-fallback").classList.remove("show");
         } else {
           status.className = "live-badge error";
-          statusText.textContent = "Mercato non trovato";
+          statusText.textContent = "Market not found";
           document.getElementById("manual-fallback").classList.add("show");
         }
       } catch (err) {
         console.error("[Pendle] Fetch error:", err);
         status.className = "live-badge error";
-        statusText.textContent = "Connessione fallita";
+        statusText.textContent = "Connection failed";
         document.getElementById("manual-fallback").classList.add("show");
       } finally {
         btn.disabled = false;
-        btn.textContent = "Aggiorna dati";
+        btn.textContent = "Refresh data";
         isFetching = false;
         update();
       }
@@ -1189,7 +1224,6 @@
       document.getElementById("ytp-val").textContent = "$" + assumptions.ytPrice.toFixed(4);
       document.getElementById("days-val").textContent = assumptions.daysLeft.toFixed(0);
       document.getElementById("uapy-val").textContent = assumptions.underlyingApy > 0 ? formatApy(assumptions.underlyingApy) : "0.00%";
-      document.getElementById("iapy-val").textContent = assumptions.impliedApy > 0 ? formatApy(assumptions.impliedApy) : "0.00%";
       document.getElementById("ppd-val").textContent = assumptions.pointsPerDay.toFixed(0);
       document.getElementById("tp-val").textContent = totalPointsB + "B";
       document.getElementById("ap-val").textContent = "$" + airdropPoolM + "M";
@@ -1202,13 +1236,12 @@
       const grossYield = cfg.hasYield ? ytAmount * assumptions.underlyingApy * (assumptions.daysLeft / 365) : 0;
       const pnl = baseAirdropValue + grossYield - investment;
       const roi = investment > 0 ? (pnl / investment) * 100 : 0;
-      const pointsPerMillion = assumptions.ytPrice > 0 ? (1000000 / assumptions.ytPrice) * assumptions.pointsPerDay * assumptions.daysLeft : 0;
-      const airdropPerMillion = totalPointsB > 0 ? (pointsPerMillion / (totalPointsB * 1e9)) * airdropPoolM * 1e6 : 0;
+      const dollarsPerMillionPoints = totalPointsB > 0 ? (airdropPoolM * 1000) / totalPointsB : 0;
 
       document.getElementById("stat-yt").textContent = formatNumber(ytAmount);
       document.getElementById("stat-daily").textContent = formatNumber(dailyPoints);
       document.getElementById("stat-total").textContent = formatNumber(totalPoints);
-      document.getElementById("stat-per-million").textContent = formatNumber(pointsPerMillion);
+      document.getElementById("stat-per-million").textContent = formatUSD(dollarsPerMillionPoints);
       document.getElementById("stat-yield").textContent = formatUSD(grossYield);
       document.getElementById("stat-airdrop").textContent = formatUSD(baseAirdropValue);
 
@@ -1227,7 +1260,7 @@
       pnlBox.className = "pnl-box " + (pnl > 0 ? "positive" : pnl < 0 ? "negative" : "neutral");
       pnlValue.className = "pnl-value " + (pnl > 0 ? "green" : pnl < 0 ? "red" : "");
       pnlValue.textContent = formatUSD(pnl);
-      pnlSub.textContent = "Airdrop " + formatUSD(baseAirdropValue) + " + Yield " + formatUSD(grossYield) + " - Investimento " + formatUSD(investment) + " | ROI " + (roi >= 0 ? "+" : "") + roi.toFixed(1) + "%";
+      pnlSub.textContent = "Airdrop " + formatUSD(baseAirdropValue) + " + Yield " + formatUSD(grossYield) + " - Investment " + formatUSD(investment) + " | ROI " + (roi >= 0 ? "+" : "") + roi.toFixed(1) + "%";
 
       const scenarios = [
         { label: "Bear", pool: 7, points: 1200 },
@@ -1259,7 +1292,7 @@
       document.getElementById("scenarios-container").innerHTML = html;
 
       document.getElementById("scenario-note").textContent =
-        "Stima per $1M investiti con questi slider: " + formatNumber(pointsPerMillion) + " punti e circa " + formatUSD(airdropPerMillion) + " di airdrop base. I bottoni sopra sono solo preset iniziali.";
+        "With these assumptions, 1M points are worth about " + formatUSD(dollarsPerMillionPoints) + ". In your scenario you generate " + formatNumber(totalPoints) + " total points and about " + formatUSD(baseAirdropValue) + " in base airdrop value. The buttons above are only starting presets.";
     }
 
     function applyManualData() {
@@ -1285,7 +1318,7 @@
       const status = document.getElementById("live-status");
       const statusText = document.getElementById("live-status-text");
       status.className = "live-badge";
-      statusText.textContent = "Dati manuali";
+      statusText.textContent = "Manual data";
     }
 
     applyPresetToControls(getSelectedMarketData());
