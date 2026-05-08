@@ -1021,7 +1021,7 @@
 
     const CHAIN_ID = 42161;
     const API_BASE = "https://api-v2.pendle.finance/core";
-    const CHIP_API_URL = "https://api.coingecko.com/api/v3/coins/chip?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false";
+    const CHIP_API_URL = "https://api.dexscreener.com/latest/dex/search/?q=CHIP";
 
     const MARKET_CONFIG = {
       "usdai-oct": { token: "usdai", pointsPerDay: 25, hasYield: false, fallbackLabel: "USDai Oct", defaultUnderlyingApy: 0 },
@@ -1289,25 +1289,70 @@
 
     async function fetchChipLiveData() {
       const status = document.getElementById("chip-live-status");
-      if (status) status.textContent = "Loading CoinGecko...";
+      if (status) status.textContent = "Loading DexScreener...";
 
       try {
         const response = await fetchWithCors(CHIP_API_URL);
         const payload = await response.json();
-        const market = payload.market_data || {};
-        const price = toNumber(market.current_price && market.current_price.usd, 0);
-        const fdv = toNumber(market.fully_diluted_valuation && market.fully_diluted_valuation.usd, 0);
+        const pairs = Array.isArray(payload.pairs) ? payload.pairs : [];
+        const candidates = pairs
+          .filter((pair) =>
+            pair &&
+            pair.baseToken &&
+            pair.baseToken.symbol === "CHIP" &&
+            pair.chainId === "arbitrum"
+          )
+          .sort((a, b) => toNumber(b.liquidity && b.liquidity.usd, 0) - toNumber(a.liquidity && a.liquidity.usd, 0));
+        const market = candidates[0] || pairs.find((pair) => pair && pair.baseToken && pair.baseToken.symbol === "CHIP") || {};
+        const price = toNumber(market.priceUsd, 0);
+        const fdv = toNumber(market.fdv, 0);
 
         chipLiveData = { price, fdv };
         setChipCardValue("chip-live-price", price > 0 ? formatTokenUSD(price) : "--", price > 0);
         setChipCardValue("chip-live-fdv", fdv > 0 ? formatUSD(fdv) : "--", fdv > 0);
-        if (status) status.textContent = price > 0 || fdv > 0 ? "Live from CoinGecko" : "CoinGecko unavailable";
+        if (status) status.textContent = price > 0 || fdv > 0 ? "Live from DexScreener" : "DexScreener unavailable";
       } catch (error) {
         console.error("[CHIP] Fetch error:", error);
         setChipCardValue("chip-live-price", chipLiveData && chipLiveData.price > 0 ? formatTokenUSD(chipLiveData.price) : "--", !!(chipLiveData && chipLiveData.price > 0));
         setChipCardValue("chip-live-fdv", chipLiveData && chipLiveData.fdv > 0 ? formatUSD(chipLiveData.fdv) : "--", !!(chipLiveData && chipLiveData.fdv > 0));
-        if (status) status.textContent = chipLiveData ? "Using cached CoinGecko data" : "CoinGecko unavailable";
+        if (status) status.textContent = chipLiveData ? "Using cached DexScreener data" : "DexScreener unavailable";
       }
+    }
+
+    async function fetchUnderlyingApyMap(marketAddresses) {
+      const targets = new Set(
+        marketAddresses
+          .filter(Boolean)
+          .map((address) => String(address).toLowerCase())
+      );
+      const map = {};
+      if (!targets.size) return map;
+
+      let skip = 0;
+      let total = 0;
+
+      while (skip === 0 || (skip < total && Object.keys(map).length < targets.size)) {
+        const response = await fetchWithCors(API_BASE + "/v2/markets/all?limit=100&skip=" + skip);
+        const payload = await response.json();
+        const results = Array.isArray(payload.results) ? payload.results : (Array.isArray(payload.markets) ? payload.markets : []);
+        total = toNumber(payload.total, results.length);
+
+        results.forEach((market) => {
+          const address = String(market.address || "").toLowerCase();
+          if (!targets.has(address)) return;
+          map[address] = toNumber(
+            market.details && market.details.underlyingApy,
+            market.underlyingApy,
+            market.ytApyBreakdown && market.ytApyBreakdown.categories && market.ytApyBreakdown.categories[0] && market.ytApyBreakdown.categories[0].apy,
+            0
+          );
+        });
+
+        if (!results.length) break;
+        skip += 100;
+      }
+
+      return map;
     }
 
     function getSelectedMarketData() {
@@ -1364,7 +1409,7 @@
       const footnote = document.getElementById("live-footnote");
       if (!footnote) return;
       if (cfg.hasYield) {
-        footnote.textContent = "For sUSDai, Pendle now supplies the starting preset for YT price, days, implied yield and underlying APY. You can still edit the APY manually for custom scenarios.";
+        footnote.textContent = "For sUSDai, Pendle now supplies the starting preset for YT price, days, implied yield and 7-day underlying APY. You can still edit the APY manually for custom scenarios.";
       } else {
         footnote.textContent = "USDai has no native yield. The buttons load the live market, then you can still adjust price, days and points to explore different scenarios.";
       }
@@ -1413,7 +1458,7 @@
       const daysLeft = calculateDaysLeft(rawMarket.expiry);
       const impliedApy = toNumber(details.impliedApy, rawMarket.impliedApy, 0);
       const underlyingApy = cfg.hasYield
-        ? toNumber(details.aggregatedApy, rawMarket.aggregatedApy, details.underlyingApy, rawMarket.underlyingApy, cfg.defaultUnderlyingApy, 0)
+        ? toNumber(details.underlyingApy, rawMarket.underlyingApy, cfg.defaultUnderlyingApy, 0)
         : 0;
       const directYtPrice = toNumber(
         rawMarket.yt && rawMarket.yt.price && rawMarket.yt.price.usd,
@@ -1476,6 +1521,20 @@
           nextData["susdai-jun"] = parseMarket(susdaiMarkets[0], "susdai-jun");
           nextData["susdai-oct"] = parseMarket(susdaiMarkets[susdaiMarkets.length - 1], "susdai-oct");
         }
+
+        const underlyingApyMap = await fetchUnderlyingApyMap([
+          nextData["susdai-jun"] && nextData["susdai-jun"].marketAddress,
+          nextData["susdai-oct"] && nextData["susdai-oct"].marketAddress
+        ]);
+
+        ["susdai-jun", "susdai-oct"].forEach((marketId) => {
+          const entry = nextData[marketId];
+          if (!entry) return;
+          const mappedApy = underlyingApyMap[String(entry.marketAddress || "").toLowerCase()];
+          if (!(mappedApy > 0)) return;
+          entry.underlyingApy = mappedApy;
+          entry.earnPct = calculateEarnPct(mappedApy, entry.impliedApy, true);
+        });
 
         liveData = nextData;
         updateMarketButtons(nextData);
