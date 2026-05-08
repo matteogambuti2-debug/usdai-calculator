@@ -1616,9 +1616,9 @@
         : "Airdrop " + formatUSD(baseAirdropValue) + " + Yield " + formatUSD(strategy.cashYield) + " - Investment " + formatUSD(investment) + " | ROI " + (roi >= 0 ? "+" : "") + roi.toFixed(1) + "%";
 
       const scenarios = [
-        { label: "Bear", pool: 7, points: 1200 },
-        { label: "Base", pool: 15, points: 900 },
-        { label: "Bull", pool: 30, points: 700 }
+        { label: "Bear", pool: 10, points: 1200 },
+        { label: "Base", pool: 30, points: 900 },
+        { label: "Bull", pool: 70, points: 700 }
       ];
 
       let html = "";
