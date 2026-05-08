@@ -635,6 +635,80 @@
     .roi-track { background: #1e293b; border-radius: 999px; height: 8px; overflow: hidden; }
     .roi-fill { height: 100%; border-radius: 999px; transition: width 0.3s ease; }
     .scenario-note { font-size: 11px; color: #475569; margin-top: 8px; line-height: 1.45; }
+    .chip-live-card {
+      background: linear-gradient(135deg, rgba(8,145,178,0.14) 0%, rgba(79,70,229,0.08) 100%);
+      border: 1px solid rgba(34,211,238,0.18);
+      position: relative;
+      overflow: hidden;
+    }
+    .chip-live-card::after {
+      content: "";
+      position: absolute;
+      right: -44px;
+      top: -44px;
+      width: 140px;
+      height: 140px;
+      background: radial-gradient(circle, rgba(34,211,238,0.14) 0%, rgba(34,211,238,0) 72%);
+      pointer-events: none;
+    }
+    .chip-live-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .chip-live-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(34,211,238,0.12);
+      border: 1px solid rgba(34,211,238,0.2);
+      color: #67e8f9;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+    .chip-live-status {
+      color: #94a3b8;
+      font-size: 11px;
+      text-align: right;
+    }
+    .chip-live-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .chip-live-stat {
+      background: rgba(15,23,42,0.5);
+      border: 1px solid rgba(34,211,238,0.12);
+      border-radius: 14px;
+      padding: 12px 14px;
+    }
+    .chip-live-label {
+      color: #94a3b8;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.45px;
+      margin-bottom: 4px;
+    }
+    .chip-live-value {
+      color: #f8fafc;
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1.05;
+    }
+    .chip-live-value.loading { color: #475569; }
+    .chip-live-note {
+      color: #94a3b8;
+      font-size: 11px;
+      line-height: 1.5;
+      margin: 0;
+    }
     .disclaimer {
       background: rgba(234,179,8,0.06);
       border: 1px solid rgba(234,179,8,0.15);
@@ -654,6 +728,7 @@
       .token-toggle { grid-template-columns: 1fr; }
       .controls-grid { grid-template-columns: 1fr; }
       .live-data-grid { grid-template-columns: 1fr 1fr; }
+      .chip-live-grid { grid-template-columns: 1fr; }
       .manual-grid { grid-template-columns: 1fr; }
       .reinvest-row { flex-direction: column; align-items: flex-start; }
       .roi-header { flex-direction: column; align-items: flex-start; gap: 4px; }
@@ -874,7 +949,7 @@
           <div class="cta-kicker">CREATOR BONUS: +20%</div>
           <p class="cta-copy">Use my personal USD.ai creator link to unlock the exclusive +20% bonus reserved for my audience and start earning with the setup you prefer.</p>
           <a href="https://app.usd.ai/i/aclm7" target="_blank" rel="noopener noreferrer" class="cta-btn">
-            Claim Your +20% Creator Bonus
+            Claim Your +20% Bonus
           </a>
           <div class="cta-sub">Available only through my personal creator link.</div>
         </div>
@@ -912,6 +987,24 @@
           <div class="scenario-note" id="scenario-note"></div>
         </div>
 
+        <div class="card chip-live-card">
+          <div class="chip-live-head">
+            <div class="chip-live-kicker">CHIP LIVE</div>
+            <div class="chip-live-status" id="chip-live-status">Loading CoinGecko...</div>
+          </div>
+          <div class="chip-live-grid">
+            <div class="chip-live-stat">
+              <div class="chip-live-label">CHIP Price</div>
+              <div class="chip-live-value loading" id="chip-live-price">--</div>
+            </div>
+            <div class="chip-live-stat">
+              <div class="chip-live-label">FDV</div>
+              <div class="chip-live-value loading" id="chip-live-fdv">--</div>
+            </div>
+          </div>
+          <p class="chip-live-note">Live market context only. A rising CHIP price and FDV can make the airdrop narrative feel much bigger to viewers.</p>
+        </div>
+
         <div class="disclaimer">
           <div class="disclaimer-title">DISCLAIMER</div>
           <div class="disclaimer-text">This simulator is for educational purposes only. Results are estimates based on the inputs provided. The airdrop is not guaranteed and the parameters may change. This is not financial advice. DYOR.</div>
@@ -924,9 +1017,11 @@
     let liveData = {};
     let manualData = {};
     let isFetching = false;
+    let chipLiveData = null;
 
     const CHAIN_ID = 42161;
     const API_BASE = "https://api-v2.pendle.finance/core";
+    const CHIP_API_URL = "https://api.coingecko.com/api/v3/coins/chip?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false";
 
     const MARKET_CONFIG = {
       "usdai-oct": { token: "usdai", pointsPerDay: 25, hasYield: false, fallbackLabel: "USDai Oct", defaultUnderlyingApy: 0 },
@@ -968,6 +1063,12 @@
       return sign + abs.toFixed(abs >= 100 ? 0 : 2);
     }
 
+    function formatTokenUSD(n) {
+      if (!Number.isFinite(n)) return "--";
+      if (Math.abs(n) >= 1) return formatUSD(n);
+      return "$" + n.toFixed(4);
+    }
+
     function formatSignedUSD(n) {
       if (!Number.isFinite(n)) return "--";
       const formatted = formatUSD(n);
@@ -980,6 +1081,13 @@
 
     function formatSignedPct(value) {
       return (value >= 0 ? "+" : "") + value.toFixed(1) + "%";
+    }
+
+    function setChipCardValue(id, value, ready) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = value;
+      el.classList.toggle("loading", !ready);
     }
 
     function getRoiColor(roi) {
@@ -1179,6 +1287,29 @@
       throw new Error("No working proxy. Details: " + errors.join(" | "));
     }
 
+    async function fetchChipLiveData() {
+      const status = document.getElementById("chip-live-status");
+      if (status) status.textContent = "Loading CoinGecko...";
+
+      try {
+        const response = await fetchWithCors(CHIP_API_URL);
+        const payload = await response.json();
+        const market = payload.market_data || {};
+        const price = toNumber(market.current_price && market.current_price.usd, 0);
+        const fdv = toNumber(market.fully_diluted_valuation && market.fully_diluted_valuation.usd, 0);
+
+        chipLiveData = { price, fdv };
+        setChipCardValue("chip-live-price", price > 0 ? formatTokenUSD(price) : "--", price > 0);
+        setChipCardValue("chip-live-fdv", fdv > 0 ? formatUSD(fdv) : "--", fdv > 0);
+        if (status) status.textContent = price > 0 || fdv > 0 ? "Live from CoinGecko" : "CoinGecko unavailable";
+      } catch (error) {
+        console.error("[CHIP] Fetch error:", error);
+        setChipCardValue("chip-live-price", chipLiveData && chipLiveData.price > 0 ? formatTokenUSD(chipLiveData.price) : "--", !!(chipLiveData && chipLiveData.price > 0));
+        setChipCardValue("chip-live-fdv", chipLiveData && chipLiveData.fdv > 0 ? formatUSD(chipLiveData.fdv) : "--", !!(chipLiveData && chipLiveData.fdv > 0));
+        if (status) status.textContent = chipLiveData ? "Using cached CoinGecko data" : "CoinGecko unavailable";
+      }
+    }
+
     function getSelectedMarketData() {
       const cfg = MARKET_CONFIG[selectedMarket];
       return liveData[selectedMarket] || manualData[selectedMarket] || {
@@ -1233,8 +1364,7 @@
       const footnote = document.getElementById("live-footnote");
       if (!footnote) return;
       if (cfg.hasYield) {
-        const presetPct = ((cfg.defaultUnderlyingApy || 0) * 100).toFixed(2);
-        footnote.textContent = "For sUSDai we use an editable APY preset of " + presetPct + "%. Pendle supplies the starting preset for YT price, days and implied yield.";
+        footnote.textContent = "For sUSDai, Pendle now supplies the starting preset for YT price, days, implied yield and underlying APY. You can still edit the APY manually for custom scenarios.";
       } else {
         footnote.textContent = "USDai has no native yield. The buttons load the live market, then you can still adjust price, days and points to explore different scenarios.";
       }
@@ -1248,7 +1378,7 @@
 
       setSliderValue("ytPrice", preset.ytPrice || 0.01);
       setSliderValue("daysLeft", preset.daysLeft || 67);
-      setSliderValue("underlyingApyPct", cfg.hasYield ? (cfg.defaultUnderlyingApy * 100) : 0);
+      setSliderValue("underlyingApyPct", cfg.hasYield ? ((preset.underlyingApy || cfg.defaultUnderlyingApy || 0) * 100) : 0);
       setSliderValue("pointsPerDay", preset.pointsPerDay || cfg.pointsPerDay);
 
       if (underlyingRange) underlyingRange.disabled = !cfg.hasYield;
@@ -1282,6 +1412,9 @@
       const details = rawMarket.details || {};
       const daysLeft = calculateDaysLeft(rawMarket.expiry);
       const impliedApy = toNumber(details.impliedApy, rawMarket.impliedApy, 0);
+      const underlyingApy = cfg.hasYield
+        ? toNumber(details.aggregatedApy, rawMarket.aggregatedApy, details.underlyingApy, rawMarket.underlyingApy, cfg.defaultUnderlyingApy, 0)
+        : 0;
       const directYtPrice = toNumber(
         rawMarket.yt && rawMarket.yt.price && rawMarket.yt.price.usd,
         rawMarket.ytPriceUsd,
@@ -1296,9 +1429,9 @@
         expiryLabel: formatExpiryLabel(rawMarket.expiry),
         ytPrice,
         daysLeft,
-        underlyingApy: cfg.defaultUnderlyingApy || 0,
+        underlyingApy,
         impliedApy,
-        earnPct: calculateEarnPct(cfg.defaultUnderlyingApy || 0, impliedApy, cfg.hasYield),
+        earnPct: calculateEarnPct(underlyingApy, impliedApy, cfg.hasYield),
         pointsPerDay: cfg.pointsPerDay
       };
     }
@@ -1324,6 +1457,7 @@
       btn.textContent = "Loading...";
       status.className = "live-badge stale";
       statusText.textContent = "Connecting to Pendle...";
+      fetchChipLiveData();
 
       try {
         const response = await fetchWithCors(API_BASE + "/v1/" + CHAIN_ID + "/markets/active");
@@ -1485,6 +1619,7 @@
     formatInvestmentInput();
     document.querySelectorAll('input[type="range"]').forEach(updateRangeVisual);
     applyPresetToControls(getSelectedMarketData());
+    fetchChipLiveData();
     fetchLiveData();
   </script>
 </body>
